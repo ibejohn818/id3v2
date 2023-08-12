@@ -1,0 +1,12 @@
+[
+{
+  "directory": "/home/jhardy/projects/cpp/mp3-edit/cmake-debug-build",
+  "command": "/usr/bin/cc -Djhid3v2_EXPORTS -g -fPIC -std=gnu11 -o src/lib/CMakeFiles/jhid3v2.dir/id3v2.c.o -c /home/jhardy/projects/cpp/mp3-edit/src/lib/id3v2.c",
+  "file": "/home/jhardy/projects/cpp/mp3-edit/src/lib/id3v2.c"
+},
+{
+  "directory": "/home/jhardy/projects/cpp/mp3-edit/cmake-debug-build",
+  "command": "/usr/bin/cc -I/home/jhardy/projects/cpp/mp3-edit/src/test/../lib -g -std=gnu11 -o src/test/CMakeFiles/jhid3-test.dir/main.c.o -c /home/jhardy/projects/cpp/mp3-edit/src/test/main.c",
+  "file": "/home/jhardy/projects/cpp/mp3-edit/src/test/main.c"
+}
+]

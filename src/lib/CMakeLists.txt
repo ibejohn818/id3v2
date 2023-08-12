@@ -1,0 +1,34 @@
+set(CMAKE_C_STANDARD 11)
+
+project("jhid3v2" C)
+
+# add_compile_options(-W -Wall -Werror -O3)
+
+set(SOURCES 
+  id3v2.c
+  )
+
+set(VERSION "0.1.0")
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/../../bin)
+
+# include_directories()
+
+add_library(${PROJECT_NAME} ${SOURCES})
+
+target_link_libraries(${PROJECT_NAME} m)
+
+
+INSTALL(TARGETS ${PROJECT_NAME} DESTINATION lib)
+INSTALL(FILES ../include/jhid3v2.h DESTINATION include)
+
+# create RPM
+set(CPACK_PACKAGE_VERSION ${VERSION})
+set(CPACK_GENERATOR "RPM" "TGZ")
+set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
+set(CPACK_PACKAGE_RELEASE 1)
+set(CPACK_PACKAGE_CONTACT "John Hardy")
+set(CPACK_PACKAGE_VENDOR "johnchardy.com")
+set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_PACKAGE_RELEASE}.${CMAKE_SYSTEM_PROCESSOR}")
+include(CPack)
