@@ -15,4 +15,4 @@ include_directories(../lib)
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
-target_link_libraries(${PROJECT_NAME} m jhid3v2)
+target_link_libraries(${PROJECT_NAME} m id3v2)

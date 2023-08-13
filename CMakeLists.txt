@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.20)
-project(mp3_edit C)
+project(id3v2lib C)
 
 set(CMAKE_C_STANDARD 11)
 
-set_property(GLOBAL PROPERTY USE_FOLERS ON)
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 

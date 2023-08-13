@@ -3,7 +3,8 @@ BUILD_TYPE ?= debug
 BUILD_TYPE_LOWER ?= $(shell echo $(BUILD_TYPE) | tr A-Z a-z)
 
 clean:
-	rm -rf cmake-*-build
+	rm -rf cmake-*-*
+	rm -rf ./dist
 
 config:
 	cmake . -B cmake-$(BUILD_TYPE_LOWER)-build -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -G "Unix Makefiles"

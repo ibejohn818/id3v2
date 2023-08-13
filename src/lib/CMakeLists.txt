@@ -1,32 +1,40 @@
 set(CMAKE_C_STANDARD 11)
 
-project("jhid3v2" C)
+project("id3v2" C)
 
 # add_compile_options(-W -Wall -Werror -O3)
 
-set(SOURCES 
+set(SOURCES
+#  ${id3v2lib_SOURCE_DIR}/src/include/id3v2/types.h
+  synch.c
+  helpers.c
   id3v2.c
   )
 
 set(VERSION "0.1.0")
-
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/../../bin)
 
-# include_directories()
+add_compile_options(-fPIC)
+
+include_directories(
+#  ${id3v2lib_SOURCE_DIR}/src/include/id3v2
+  ${id3v2lib_SOURCE_DIR}/src/include
+)
 
 add_library(${PROJECT_NAME} ${SOURCES})
 
 # target_link_libraries(${PROJECT_NAME} m)
 
-
-INSTALL(TARGETS ${PROJECT_NAME} DESTINATION lib)
-INSTALL(FILES ../include/id3v2.h DESTINATION include)
+set(CMAKE_INSTALL_MODE "REL_SYMLINK")
+install(TARGETS ${PROJECT_NAME} DESTINATION lib)
+install(FILES ${id3v2lib_SOURCE_DIR}/src/include/id3v2.h DESTINATION include)
+install(DIRECTORY ${id3v2lib_SOURCE_DIR}/src/include/id3v2 DESTINATION include)
 
 message("-- CMAKE_SYSTEM_INFO_FILE: ${CMAKE_SYSTEM_INFO_FILE}")
 message("-- CMAKE_SYSTEM_NAME:      ${CMAKE_SYSTEM_NAME}")
 message("-- CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")
 message("-- CMAKE_SYSTEM:           ${CMAKE_SYSTEM}")
-message("-- CMAKE_OS_NAME:           ${CMAKE_OS_NAME}")
+message("-- CMAKE_OS_NAME:          ${CMAKE_OS_NAME}")
 
 # create install packages
 set(CPACK_PACKAGE_VERSION ${VERSION})

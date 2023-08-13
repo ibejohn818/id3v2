@@ -1,7 +1,17 @@
 [
 {
   "directory": "/home/jhardy/projects/cpp/mp3-edit/cmake-debug-build/src/lib",
-  "command": "/usr/bin/cc -Djhid3v2_EXPORTS  -g -fPIC -std=gnu11 -o CMakeFiles/jhid3v2.dir/id3v2.c.o -c /home/jhardy/projects/cpp/mp3-edit/src/lib/id3v2.c",
+  "command": "/usr/bin/cc -Did3v2_EXPORTS -I/home/jhardy/projects/cpp/mp3-edit/src/include -g -fPIC -fPIC -std=gnu11 -o CMakeFiles/id3v2.dir/synch.c.o -c /home/jhardy/projects/cpp/mp3-edit/src/lib/synch.c",
+  "file": "/home/jhardy/projects/cpp/mp3-edit/src/lib/synch.c"
+},
+{
+  "directory": "/home/jhardy/projects/cpp/mp3-edit/cmake-debug-build/src/lib",
+  "command": "/usr/bin/cc -Did3v2_EXPORTS -I/home/jhardy/projects/cpp/mp3-edit/src/include -g -fPIC -fPIC -std=gnu11 -o CMakeFiles/id3v2.dir/helpers.c.o -c /home/jhardy/projects/cpp/mp3-edit/src/lib/helpers.c",
+  "file": "/home/jhardy/projects/cpp/mp3-edit/src/lib/helpers.c"
+},
+{
+  "directory": "/home/jhardy/projects/cpp/mp3-edit/cmake-debug-build/src/lib",
+  "command": "/usr/bin/cc -Did3v2_EXPORTS -I/home/jhardy/projects/cpp/mp3-edit/src/include -g -fPIC -fPIC -std=gnu11 -o CMakeFiles/id3v2.dir/id3v2.c.o -c /home/jhardy/projects/cpp/mp3-edit/src/lib/id3v2.c",
   "file": "/home/jhardy/projects/cpp/mp3-edit/src/lib/id3v2.c"
 },
 {

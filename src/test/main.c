@@ -64,56 +64,43 @@ char *readFile(const char *fileName) {
 void print_bytes(char *buf, size_t start, size_t len) {
 
   for (size_t i = start; i < len; i++) {
-    // printf("0x%X ", (uint8_t)buf[i]);
+    // printf("0x%X ", (uint8_t)buffer[i]);
     printf("%c ", buf[i]);
   }
   puts("\n");
 }
 
 int main(int argc, char **argv) {
-
   // const char file_name[] = "/tmp/song1.mp3";
   const char *file_name = argv[1];
 
   id3v2_tag_t *tag = jcid3v2_from_file(file_name);
+  printf("ID3 Version: %u \n", tag->version);
 
-  id3v2_frame_t *f;
-  size_t pos = 0;
-  for (;;) {
+  id3v2_frame_list_t *l = tag->frames;
 
-    printf("loop cursor start: %lu \n", pos);
-    f = id3v2_tag_parse_frame(tag, pos);
-    if (f != NULL) {
-      printf("Tag: %s | size: %u \n", f->tag, f->size);
-      pos += f->size + 10;
-    } else {
-      size_t wp = id3v2_tag_eat_padding(tag, pos);
-      if ((pos + wp) >= tag->tag_size) {
-        puts("no more padding");
-        break;
-      } else {
-        pos += wp;
-        printf("eat pos: %lu \n", pos);
-        break;
-      }
-    }
+  while(l != NULL) {
+    printf("Frame: %s | size: %u \n", l->frame->tag, l->frame->size);
+    l = l->next;
   }
 
-  print_bytes(tag->tag_buffer, pos, tag->tag_size);
+  id3v2_frame_text_t *tt;
 
-  // printf("\n\n");
-  // for(uint32_t i=0; i < f->size; i++) {
-  //   printf("0x%x ", f->buf[i]);
-  // }
-  // printf("\n\n");
-
-  char check[4] = "TIt1";
-  if (!validate(check)) {
-    puts("Validation Was False");
-  } else {
-    puts("Validation Was True");
+  tt = id3v2_tag_artist(tag);
+  if (tt != NULL) {
+    printf("Artist: %s \n", tt->text);
   }
 
-  puts("hello world");
+  tt = id3v2_tag_album(tag);
+  if (tt != NULL) {
+    printf("Album: %s \n", tt->text);
+  }
+
+  tt = id3v2_tag_track(tag);
+  if (tt != NULL) {
+    printf("Track: %s \n", tt->text);
+  }
+  puts("here"); 
+
   return 0;
 }
