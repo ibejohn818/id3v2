@@ -15,7 +15,7 @@ build:
 gcc-build-image:
 	docker buildx build -f docker/gcc.ubuntu.Dockerfile -t tools/ubuntu:gcc .
 
-rpm:
+package-alma9:
 	docker buildx build \
 		-t id3v2lib:rpm \
 		--output type=local,dest=./ \
