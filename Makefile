@@ -6,8 +6,7 @@ clean:
 	rm -rf cmake-*-build
 
 config:
-	cmake -B cmake-$(BUILD_TYPE_LOWER)-build -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -G "Unix Makefiles" .
-	# cmake -B cmake-$(BUILD_TYPE_LOWER)-build -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -G "Ninja" .
+	cmake . -B cmake-$(BUILD_TYPE_LOWER)-build -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -G "Unix Makefiles"
 
 build:
 	$(MAKE) -C cmake-$(BUILD_TYPE_LOWER)-build

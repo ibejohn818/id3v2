@@ -1,3 +1,7 @@
+/*
+ * ID3v2 Ref: https://github.com/id3/ID3v2.4/blob/master/
+ *
+ */
 #ifndef _JHID3V3_H
 #define _JHID3V3_H
 
@@ -11,12 +15,10 @@
 #define ID3_FRAME_HEADER 10
 
 typedef struct {
-
   bool unsynch_fields;
   bool extended_header;
   bool expreimental;
   bool footer;
-
 } id3v2_flags_t;
 
 typedef struct {
@@ -26,7 +28,6 @@ typedef struct {
   id3v2_flags_t flags;
   char *file_name;
   char *tag_buffer;
-  FILE *fd;
 
 } id3v2_tag_t;
 
@@ -59,5 +60,6 @@ id3v2_tag_t *jcid3v2_from_buffer(const char *buf);
  * Return the next frame from an id3v2_tag_t buffer.
  */
 id3v2_frame_t *id3v2_tag_parse_frame(id3v2_tag_t *t, size_t cursor_pos);
+size_t id3v2_tag_eat_padding(id3v2_tag_t *t, size_t cursor_pos);
 
 #endif

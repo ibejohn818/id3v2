@@ -54,3 +54,4 @@ dkms.conf
 cmake-*-build
 .cache
 .idea
+dist/

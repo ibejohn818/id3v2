@@ -1,6 +1,6 @@
-#include "../include/jhid3v2.h"
+#include "../include/id3v2.h"
 
-static uint32_t btoi(char *bytes, int size, int offset) {
+static uint32_t int_decode(char *bytes, int size, int offset) {
   unsigned int result = 0x00;
   int i = 0;
   for (i = 0; i < size; i++) {
@@ -11,7 +11,7 @@ static uint32_t btoi(char *bytes, int size, int offset) {
   return result;
 }
 
-static char *itob(int integer) {
+static char *int_encode(int integer) {
   int i;
   int size = 4;
   char *result = (char *)malloc(sizeof(char) * size);
@@ -25,7 +25,7 @@ static char *itob(int integer) {
   return result;
 }
 
-static uint32_t syncint_encode(int value) {
+static uint32_t synch_encode(int value) {
   int out, mask = 0x7F;
 
   while (mask ^ 0x7FFFFFFF) {
@@ -39,7 +39,7 @@ static uint32_t syncint_encode(int value) {
   return out;
 }
 
-static uint32_t syncint_decode(int value) {
+static uint32_t synch_decode(int value) {
   unsigned int a, b, c, d, result = 0x0;
   a = value & 0xFF;
   b = (value >> 8) & 0xFF;
@@ -56,7 +56,7 @@ static uint32_t syncint_decode(int value) {
 
 id3v2_tag_t *jcid3v2_from_file(const char *file_name) {
 
-  FILE *fd = fopen(file_name, "r+");
+  FILE *fd = fopen(file_name, "rb");
 
   id3v2_tag_t *t;
   t = (id3v2_tag_t *)malloc(sizeof(*t));
@@ -66,11 +66,10 @@ id3v2_tag_t *jcid3v2_from_file(const char *file_name) {
   t->file_size = ftell(fd);
   rewind(fd);
 
-  t->fd = fd;
 
   char header[ID3_HEADER];
 
-  if (fread(&header, sizeof(char), ID3_HEADER, t->fd) != ID3_HEADER) {
+  if (fread(&header, sizeof(char), ID3_HEADER, fd) != ID3_HEADER) {
     puts("unable to read id3 header");
     exit(1);
   }
@@ -90,40 +89,18 @@ id3v2_tag_t *jcid3v2_from_file(const char *file_name) {
   t->flags.expreimental = header[5] & 0b00100000;
   t->flags.footer = header[5] & 0b00010000;
 
-  char fl = header[5];
-  printf("Flags: %x \n", fl);
-  while (fl) {
-    if (fl & 1)
-      printf("1");
-    else
-      printf("0");
-
-    fl >>= 1;
-  }
-  printf("\n");
-
   // decode the tag size
-  t->tag_size = syncint_decode(btoi(header, 4, 6));
+  t->tag_size = synch_decode(int_decode(header, 4, 6));
 
   printf("Tag size: %u \n", t->tag_size);
 
-  fseek(t->fd, 10, SEEK_SET);
+  fseek(fd, 10, SEEK_SET);
 
   // read tag buffer
   t->tag_buffer = (char *)calloc(t->tag_size, sizeof(char));
-  fread(t->tag_buffer, sizeof(char), t->tag_size, t->fd);
+  fread(t->tag_buffer, sizeof(char), t->tag_size, fd);
 
-  // char frame[10];
-  //
-  // fread(&frame, 1, 10, fd);
-  //
-  // printf("%c %c %c %c \n", frame[0], frame[1], frame[2], frame[3]);
-
-  // allocate buffer
-  // t->buffer = (char *)malloc(t->buffer_size * sizeof(*t->buffer));
-  // read  file into buffer
-  // size_t bytes_read = fread(t->buffer, sizeof(*t->buffer), t->buffer_size,
-  // fd);
+  fclose(fd);
 
   return t;
 }
@@ -135,6 +112,44 @@ id3v2_tag_t *jcid3v2_from_buffer(const char *buf) {
   return t;
 }
 
+/**
+* validate a frame by checking its tag
+*/
+static bool _id3v2_validate_frame_tag(const char tag[4]) {
+  // FIXME: tmp check during development
+
+
+  for(uint8_t i = 0; i < 4; i++) {
+
+    bool alpha_chk = tag[i] >= 'A' && tag[i] <= 'Z';
+    bool numero_chk = tag[i] >= '0' && tag[i] <= '9';
+
+    if (!alpha_chk && !numero_chk) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+size_t id3v2_tag_eat_padding(id3v2_tag_t *t, size_t cursor_pos) {
+
+  size_t c = 0;
+  size_t idx;
+  while((cursor_pos + c) <= t->tag_size) {
+    idx = (cursor_pos + c);
+
+    char chk = t->tag_buffer[idx];
+    // printf("chk: %s | tag size: %u \n", &chk, t->tag_size);
+    if (chk != '\0') {
+      return c;
+    }
+    c++;
+  }
+
+  return c;
+}
+
 id3v2_frame_t *id3v2_tag_parse_frame(id3v2_tag_t *t, size_t cursor_pos) {
 
   // validate the frame tag before we allocate the struct
@@ -142,6 +157,9 @@ id3v2_frame_t *id3v2_tag_parse_frame(id3v2_tag_t *t, size_t cursor_pos) {
   memcpy(&tag, (t->tag_buffer + cursor_pos), 4);
 
   // validate the tag and return NULL for invalid
+  if (!_id3v2_validate_frame_tag(tag)) {
+    return NULL;
+  }
 
   // tag is valid, allocate the struct
   id3v2_frame_t *f;
@@ -153,8 +171,11 @@ id3v2_frame_t *id3v2_tag_parse_frame(id3v2_tag_t *t, size_t cursor_pos) {
   // move the cursor forward
   cursor_pos += 4;
 
-  // get the synch safe size
-  f->size = syncint_decode(btoi(t->tag_buffer, 4, cursor_pos));
+  f->size = int_decode(t->tag_buffer, 4, cursor_pos);
+  if(t->version == 4) {
+    // version 4 gets the synch safe size
+    f->size = synch_decode(f->size);
+  }
 
   // move the cursor forward
   cursor_pos += 4;
@@ -169,7 +190,7 @@ id3v2_frame_t *id3v2_tag_parse_frame(id3v2_tag_t *t, size_t cursor_pos) {
   memcpy(f->buf, t->tag_buffer + cursor_pos, f->size); 
 
   cursor_pos += f->size;
-  printf("cursor pos: %lu \n", cursor_pos);
+  printf("func cursor pos: %lu \n", cursor_pos);
 
   return f;
 }

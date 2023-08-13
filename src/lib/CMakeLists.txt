@@ -16,15 +16,21 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/../../bin)
 
 add_library(${PROJECT_NAME} ${SOURCES})
 
-target_link_libraries(${PROJECT_NAME} m)
+# target_link_libraries(${PROJECT_NAME} m)
 
 
 INSTALL(TARGETS ${PROJECT_NAME} DESTINATION lib)
-INSTALL(FILES ../include/jhid3v2.h DESTINATION include)
+INSTALL(FILES ../include/id3v2.h DESTINATION include)
 
-# create RPM
+message("-- CMAKE_SYSTEM_INFO_FILE: ${CMAKE_SYSTEM_INFO_FILE}")
+message("-- CMAKE_SYSTEM_NAME:      ${CMAKE_SYSTEM_NAME}")
+message("-- CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")
+message("-- CMAKE_SYSTEM:           ${CMAKE_SYSTEM}")
+message("-- CMAKE_OS_NAME:           ${CMAKE_OS_NAME}")
+
+# create install packages
 set(CPACK_PACKAGE_VERSION ${VERSION})
-set(CPACK_GENERATOR "RPM" "TGZ")
+set(CPACK_GENERATOR "RPM" "TGZ" "STGZ")
 set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
 set(CPACK_PACKAGE_RELEASE 1)
 set(CPACK_PACKAGE_CONTACT "John Hardy")
