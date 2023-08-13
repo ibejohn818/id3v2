@@ -21,6 +21,6 @@ make config build BUILD_TYPE=Release
 Requires `docker` and copies to `dist/` dir.
 
 ```shell
-# alma9
-make package-alma9
+# rocky linux 9
+make package-rocky9
 ```
