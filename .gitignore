@@ -56,3 +56,4 @@ cmake-*-*
 .idea
 dist/
 spec/
+compile_commands.json
