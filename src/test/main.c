@@ -1,24 +1,10 @@
-#include <ctype.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <wchar.h>
+#include <uchar.h>
+#include <iconv.h>
 
 #include "../include/id3v2.h"
-
-static bool validate(const char tag[4]) {
-  // FIXME: tmp check during development
-
-  for (uint8_t i = 0; i < 4; i++) {
-
-    bool alpha_chk = tag[i] >= 'A' && tag[i] <= 'Z';
-    bool numero_chk = tag[i] >= '0' && tag[i] <= '9';
-
-    if (!alpha_chk && !numero_chk) {
-      return false;
-    }
-  }
-  return true;
-}
 
 char *readFile(const char *fileName) {
 
@@ -70,19 +56,36 @@ void print_bytes(char *buf, size_t start, size_t len) {
   puts("\n");
 }
 
+void write_image(id3v2_frame_picture_t *f) {
+
+  FILE *fd = fopen("/tmp/test.jpg", "w");
+  if (fd <= 0) {
+    puts("error creating file");
+    return;
+  }
+
+  size_t bytes_written = fwrite(f->buffer, 1, f->size, fd);
+  printf("Bytes written: %lu \n", bytes_written); 
+
+  fclose(fd);
+
+}
+
 int main(int argc, char **argv) {
   // const char file_name[] = "/tmp/song1.mp3";
   const char *file_name = argv[1];
 
-  id3v2_tag_t *tag = jcid3v2_from_file(file_name);
+  id3v2_tag_t *tag = id3v2_from_file(file_name);
   printf("ID3 Version: %u \n", tag->version);
 
   id3v2_frame_list_t *l = tag->frames;
 
-  while(l != NULL) {
+  while (l != NULL) {
     printf("Frame: %s | size: %u \n", l->frame->tag, l->frame->size);
     l = l->next;
   }
+
+  iconv_t conv = iconv_open("UTF-8", "UTF-16LE");
 
   id3v2_frame_text_t *tt;
 
@@ -100,7 +103,55 @@ int main(int argc, char **argv) {
   if (tt != NULL) {
     printf("Track: %s \n", tt->text);
   }
-  puts("here"); 
+
+  tt = id3v2_tag_title(tag);
+  if (tt != NULL) {
+    printf("Title: %s \n", tt->text);
+    // size_t conv_size = 128;
+    // char *conv_buff = (char *)malloc(sizeof(char) * conv_size);
+    // iconv(conv, (char **)&tt->frame->buffer, (size_t *)&tt->frame->size, (char **)&conv_buff, &conv_size);
+    // printf("Frame Size: %lu | Conv: %s \n", (size_t)tt->frame->size, conv_buff);
+    // char *ubuff = (char *)calloc(65, sizeof(char));
+    // size_t ubuff_size = 65;
+    // iconv(conv, &tt->text, (size_t *)&tt->frame->size - 4, &ubuff, &ubuff_size);
+  }
+
+  id3v2_frame_t *pr = id3v2_tag_raw_frame_by_tag(tag, "APIC");
+  id3v2_frame_picture_t *pic = NULL;
+  if (pr != NULL) {
+    pic = id3v2_frame_picture(pr);
+  }
+
+  if (pic != NULL) {
+    write_image(pic);
+  }
+
+  tt = id3v2_tag_title(tag);
+  for(size_t i=0; i < tt->frame->size; i++) {
+    printf("B: %x | ", tt->frame->buffer[i]);
+  }
+  printf("\n");
+
+  // for(size_t i=0; i < pic->frame->size; i++) {
+  // for(size_t i=0; i < 30; i++) {
+  //   printf("B: %x | ", pic->buffer[i]);
+  // }
+  // printf("\n");
+
+  printf("File name: %s \n", tag->file_name);
+  size_t total = 0;
+
+  l = tag->frames;
+  while(l != NULL) {
+    total += l->frame->size;
+    l = l->next;
+  }
+
+  printf("Open-Total: %u | Calc-Total: %lu \n", tag->tag_size, total);
+
+  // id3v2_tag_write_file(tag, "/tmp/test-2.mp3");
+
+  puts("here");
 
   return 0;
 }

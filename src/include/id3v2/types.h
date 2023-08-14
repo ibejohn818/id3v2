@@ -17,6 +17,29 @@ typedef enum {
   UTF8,
 } id3v2_frame_encoding_t;
 
+typedef enum {
+  OTHER = 0x00,
+  PIXEL32,
+  OTHER_ICON,
+  FRONT_COVER,
+  BACK_COVER,
+  LEAFLET,
+  MEDIA,
+  LEAD_ARTIST,
+  CONDUCTOR,
+  BAND,
+  COMPOSER,
+  LYRICIST,
+  RECORDING_LOC,
+  DURING_RECORDING,
+  DURING_PERFORMANCE,
+  VIDEO_CAPTURE,
+  COLORED_FISH,
+  ILLUSTRATION,
+  BAND_LOGO,
+  PUBLISHER_LOGO,
+} id3v2_picture_type_t;
+
 /**
  * id3 tag flags
  */
@@ -27,20 +50,33 @@ typedef struct {
   bool footer;
 } id3v2_flags_t;
 
+
 /**
  * id3 tag.
  * tag_buffer holds bytes specified by tag_size
  */
 typedef struct {
   uint8_t version;
-  uint32_t tag_size;
-  size_t file_size;
+  // TODO: finalize on a single flag solution
   id3v2_flags_t flags;
-  char *file_name;
+  uint32_t tag_size;
+  char flag_byte;
+
+  // scanned file info
+  char file_name[128];
+  size_t file_size;
+
   // the entire tag buffer specified by 
   // tag_size minus the header
   char *tag_buffer;
+
+  // linked list of raw frames
   id3v2_frame_list_t *frames;
+
+  // mp3 data size
+  size_t music_size;
+  // mp3 file data
+  char *music_data;
 
 } id3v2_tag_t;
 
@@ -72,7 +108,10 @@ typedef struct {
 
 typedef struct {
   id3v2_frame_t *frame;
-  char mime[64];
+  id3v2_frame_encoding_t encoding;
+  char mime[32];
+  id3v2_picture_type_t type;
+  size_t size;
   unsigned char *buffer;
 } id3v2_frame_picture_t;
 
@@ -80,6 +119,7 @@ typedef struct id3v2_frame_list_s {
   id3v2_frame_t *frame;
   struct id3v2_frame_list_s *next;
 } id3v2_frame_list_t;
+
 
 /*
 typedef enum {

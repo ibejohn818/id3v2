@@ -14,7 +14,9 @@ set(SOURCES
 set(VERSION "0.1.0")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/../../bin)
 
-add_compile_options(-fPIC)
+
+
+# add_compile_options(-fPIC)
 
 include_directories(
 #  ${id3v2lib_SOURCE_DIR}/src/include/id3v2

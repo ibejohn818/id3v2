@@ -1,23 +1,26 @@
 #include "id3v2.h"
+#include "id3v2/synch.h"
 #include "id3v2/types.h"
 
 static id3v2_frame_list_t *scan_frames(id3v2_tag_t *t);
 
-id3v2_tag_t *jcid3v2_from_file(const char *file_name) {
+id3v2_tag_t *id3v2_from_file(const char *file_name) {
 
-  FILE *fd = fopen(file_name, "rb");
+  FILE *fp = fopen(file_name, "r");
 
   id3v2_tag_t *t;
   t = (id3v2_tag_t *)malloc(sizeof(*t));
 
+  memcpy(&t->file_name, file_name, strlen(file_name));
+
   // get the total size of the file
-  fseek(fd, 0, SEEK_END);
-  t->file_size = ftell(fd);
-  rewind(fd);
+  fseek(fp, 0, SEEK_END);
+  t->file_size = ftell(fp);
+  rewind(fp);
 
   char header[ID3_HEADER];
 
-  if (fread(&header, sizeof(char), ID3_HEADER, fd) != ID3_HEADER) {
+  if (fread(&header, sizeof(char), ID3_HEADER, fp) != ID3_HEADER) {
     puts("unable to read id3 header");
     exit(1);
   }
@@ -32,6 +35,7 @@ id3v2_tag_t *jcid3v2_from_file(const char *file_name) {
   t->version = header[3];
 
   // set flags
+  t->flag_byte = header[5];
   t->flags.unsynch_fields = header[5] & 0b10000000;
   t->flags.extended_header = header[5] & 0b01000000;
   t->flags.expreimental = header[5] & 0b00100000;
@@ -42,21 +46,28 @@ id3v2_tag_t *jcid3v2_from_file(const char *file_name) {
 
   printf("Tag size: %u \n", t->tag_size);
 
-  fseek(fd, 10, SEEK_SET);
+  fseek(fp, 10, SEEK_SET);
 
   // read tag buffer
   t->tag_buffer = (char *)calloc(t->tag_size, sizeof(char));
-  fread(t->tag_buffer, sizeof(char), t->tag_size, fd);
+  fread(t->tag_buffer, sizeof(char), t->tag_size, fp);
+
+  // allocate music_data
+  t->music_size = t->file_size - ftell(fp);
+  t->music_data = (char *)malloc(sizeof(char) * t->music_size);
+
+  // read data
+  fread(t->music_data, sizeof(char), t->music_size, fp);
 
   // scan frames
   scan_frames(t);
 
-  fclose(fd);
+  fclose(fp);
 
   return t;
 }
 
-id3v2_tag_t *jcid3v2_from_buffer(const char *buf) {
+id3v2_tag_t *id3v2_from_buffer(const char *buf) {
   id3v2_tag_t *t;
   t = (id3v2_tag_t *)malloc(sizeof(*t));
 
@@ -201,28 +212,32 @@ id3v2_frame_text_t *id3v2_frame_text(id3v2_frame_t *f) {
 
   // determine encoding
   // TODO: utf byte order marker?
-  switch(f->buffer[cursor++]) {
-    case 0x00:
-      t->encoding = LATIN1;
-      break;
-    case 0x01:
-      t->encoding = UTF16;
-      null_term_size = 2;
-      break;
-    case 0x02:
-      t->encoding = UTF16BE;
-      null_term_size = 2;
-      break;
-    case 0x03:
-      t->encoding = UTF8;
-      null_term_size = 2;
-      break;
-    default:
-      printf("Illegal encoding for frame: %s \n", f->tag);
-      puts("Defaulting to LATIN1");
-      t->encoding = LATIN1;
-  } 
-  
+  switch (f->buffer[cursor++]) {
+  case 0x00:
+    t->encoding = LATIN1;
+      puts("Latin1");
+    break;
+  case 0x01:
+    t->encoding = UTF16;
+      puts("utf16");
+    null_term_size = 2;
+    break;
+  case 0x02:
+    t->encoding = UTF16BE;
+      puts("utf16be");
+    null_term_size = 2;
+    break;
+  case 0x03:
+    t->encoding = UTF8;
+      puts("utf8");
+    null_term_size = 2;
+    break;
+  default:
+    printf("Illegal encoding for frame: %s \n", f->tag);
+    puts("Defaulting to LATIN1");
+    t->encoding = LATIN1;
+  }
+
   t->text = (char *)calloc((f->size + null_term_size), sizeof(char));
   memcpy(t->text, f->buffer + cursor, f->size);
 
@@ -240,12 +255,10 @@ id3v2_frame_t *id3v2_tag_raw_frame_by_tag(id3v2_tag_t *t, const char tag[4]) {
 
     l = l->next;
 
-  } while(l != NULL);
-
+  } while (l != NULL);
 
   return NULL;
 }
-
 
 id3v2_frame_text_t *id3v2_frame_text_by_tag(id3v2_tag_t *t, const char tag[4]) {
 
@@ -260,4 +273,166 @@ id3v2_frame_text_t *id3v2_frame_text_by_tag(id3v2_tag_t *t, const char tag[4]) {
   }
 
   return txt;
+}
+
+static id3v2_picture_type_t picture_type(const char b) {
+  switch (b) {
+  case 0x00:
+    return OTHER;
+    break;
+  case 0x01:
+    return PIXEL32;
+    break;
+  case 0x02:
+    return OTHER_ICON;
+    break;
+  case 0x03:
+    return FRONT_COVER;
+    break;
+  case 0x04:
+    return BACK_COVER;
+    break;
+  case 0x05:
+    return LEAFLET;
+    break;
+  default:
+    return OTHER;
+  }
+}
+
+id3v2_frame_picture_t *id3v2_frame_picture(id3v2_frame_t *f) {
+
+  if (f->tag[0] != 'A') {
+    return NULL;
+  }
+
+  id3v2_frame_picture_t *p;
+  p = (id3v2_frame_picture_t *)malloc(sizeof(*p));
+  p->frame = f;
+
+  size_t cursor = 0;
+
+  // determine encoding
+  switch (f->buffer[cursor]) {
+  case 0x00:
+    p->encoding = LATIN1;
+    break;
+  case 0x01:
+    p->encoding = UTF16;
+    break;
+  case 0x02:
+    p->encoding = UTF16BE;
+    break;
+  case 0x03:
+    p->encoding = UTF8;
+    break;
+  default:
+    p->encoding = LATIN1;
+  }
+
+  cursor++;
+
+  // get mime type
+  size_t offset = 0;
+  while (f->buffer[(cursor + offset)] != '\0') {
+    printf("B: %c \n", f->buffer[(cursor + (offset))]);
+    offset++;
+  }
+  memcpy(&p->mime, f->buffer + cursor, offset);
+
+  cursor += offset;
+
+  // determine picture type
+  p->type = picture_type(f->buffer[cursor]);
+  cursor++;
+
+  // description
+  offset = 0;
+  while (f->buffer[(cursor + offset)] != '\0') {
+    offset++;
+  }
+  // description should be at least 1 byte (null terminator)
+  if (offset == 0) {
+    offset++;
+  }
+  // TODO: copy description?
+  cursor += offset;
+
+  // remove any 0x00 bytes before image
+  while(f->buffer[cursor] == 0x00) {
+    cursor++;
+  }
+
+  // determine size of remaining bytes in buffer
+  p->size = (f->size - cursor);
+  printf("frame size: %u \n", f->size);
+  printf("image size: %lu \n", p->size);
+  // allocate and copy picture data
+  p->buffer = (unsigned char *)calloc(p->size, sizeof(unsigned char));
+  memcpy(p->buffer, f->buffer + cursor, p->size);
+
+  return p;
+}
+
+size_t id3v2_tag_total_frame_size(id3v2_tag_t *t) {
+
+  size_t total = 0;
+  id3v2_frame_list_t *l = t->frames;
+  while(l != NULL) {
+    total += l->frame->size;
+    l = l->next;
+  }
+  return total;
+}
+
+void id3v2_tag_write_file(id3v2_tag_t *t, const char *save_to) {
+
+  // create the save_to file
+  FILE *fp = fopen(save_to, "w");
+
+  size_t frame_size = id3v2_tag_total_frame_size(t);
+
+  // write header
+
+  // write ID3 tag
+  fwrite("ID3", sizeof(char), 3, fp);
+
+  // write 2 version bytes
+  fprintf(fp, "%c0", t->version);
+  // fwrite((char *)&t->version, sizeof(char), 1, fp);
+  // fwrite("0", sizeof(char), 1, fp);
+
+  // write attr flag
+  fwrite(&t->flag_byte, sizeof(char), 1, fp);
+
+  // write frame size
+  fwrite(int_encode(synch_encode(frame_size)), sizeof(char), 4, fp);
+
+  id3v2_frame_list_t *l = t->frames;
+  while(l != NULL) {
+
+    // write frame tag
+    fwrite(l->frame->tag, sizeof(char), 4, fp);
+
+    // write flag bytes
+    fwrite(l->frame->flags, sizeof(char), 2, fp);
+
+    // write size bytes
+    //TODO: handle synch int's
+    fwrite(int_encode(l->frame->size), sizeof(char), 4, fp);
+
+    // write frame buffer
+    fwrite(l->frame->buffer, sizeof(char), l->frame->size, fp);
+    l = l->next;
+  }
+
+  // write padding
+  // for(size_t i = 0; i < ID3_PADDING; i++) {
+  //   fwrite("\0", sizeof(char), 1, fp);
+  // }
+
+  // write the music data
+  fwrite(t->music_data, sizeof(char), t->music_size, fp); 
+
+  fclose(fp);
 }

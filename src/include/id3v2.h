@@ -1,4 +1,5 @@
 /*
+id3v2_frame_picture_t *id3v2_frame_picture(id3v2_frame_t *f);
  * ID3v2 Ref: https://github.com/id3/ID3v2.4/blob/master/
  *
  */
@@ -10,12 +11,13 @@
 
 #define ID3_HEADER 10
 #define ID3_FRAME_HEADER 10
+#define ID3_PADDING 2048
 
 /**
  * load id3 tags by file
  */
-id3v2_tag_t *jcid3v2_from_file(const char *file_name);
-id3v2_tag_t *jcid3v2_from_buffer(const char *buf);
+id3v2_tag_t *id3v2_from_file(const char *file_name);
+id3v2_tag_t *id3v2_from_buffer(const char *buf);
 
 /**
  * Return the next frame from an id3v2_tag_t buffer.
@@ -39,10 +41,16 @@ id3v2_frame_picture_t *id3v2_frame_picture(id3v2_frame_t *f);
  */
 id3v2_frame_text_t *id3v2_frame_comment(id3v2_frame_t *f);
 
+/**
+ * write id3 tag w/music data to new file
+ */
+void id3v2_tag_write_file(id3v2_tag_t *t, const char *save_to);
 
 id3v2_frame_t *id3v2_tag_raw_frame_by_tag(id3v2_tag_t *t, const char tag[4]);
 
 id3v2_frame_text_t *id3v2_frame_text_by_tag(id3v2_tag_t *t, const char tag[4]);
+
+size_t id3v2_tag_total_frame_size(id3v2_tag_t *t);
 
 // helper methods
 id3v2_frame_text_t *id3v2_tag_title(id3v2_tag_t *t); // TIT2
