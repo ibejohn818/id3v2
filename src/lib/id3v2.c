@@ -143,8 +143,6 @@ id3v2_frame_t *id3v2_tag_parse_frame(id3v2_tag_t *t, size_t *cursor_pos) {
     f->size = synch_decode(f->size);
   }
 
-  memcpy(f->size_bytes, t->tag_buffer + *cursor_pos, 4);
-
   // move the cursor forward
   *cursor_pos += 4;
 
@@ -246,7 +244,6 @@ id3v2_frame_text_t *id3v2_frame_text(id3v2_frame_t *f) {
   }
   cursor++;
 
-  // t->text = (char *)calloc((f->size + null_term_size), sizeof(char));
   t->text = (char *)calloc(f->size, sizeof(char));
   memcpy(t->text, f->buffer + cursor, f->size);
 
@@ -478,4 +475,62 @@ void id3v2_tag_write_to_buffer(id3v2_tag_t *t, unsigned char **buffer, size_t *s
 
   *buffer = b;
   *size = total;
+}
+
+void id3v2_tag_remove_frame_by_tag(id3v2_tag_t *t, const char tag[4]) {
+
+  if (t->frames == NULL) {
+    return;
+  }
+
+  id3v2_frame_list_t *l = t->frames;
+  id3v2_frame_list_t *prev = NULL;
+
+  while(l != NULL) {
+
+    if(strcmp(l->frame->tag, tag) == 0) {
+
+      if (prev == NULL) {
+        // if prev is empty, this is the head node
+        // next becomes the new head  
+        t->frames = l->next;
+      } else {
+        // link this nodes next as the prev's next
+        prev->next = l->next;
+      }
+
+      // free frame
+      free(l->frame->buffer);
+      free(l->frame);
+      free(l);
+      // exit loop
+      break;
+    }
+
+    prev = l;
+    l = l->next;
+
+  }
+
+}
+
+void id3v2_tag_free(id3v2_tag_t *t) {
+
+ 
+  // free framesj
+  id3v2_frame_list_t *l = t->frames;
+  id3v2_frame_list_t *tmp;
+  while(l != NULL) {
+
+    tmp = l->next;
+    free(l->frame->buffer);
+    free(l->frame);
+    free(l);
+    l = tmp;
+  }
+
+  // free music data
+  free(t->music_data);
+  free(t);
+
 }

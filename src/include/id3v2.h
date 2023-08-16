@@ -58,11 +58,20 @@ id3v2_frame_text_t *id3v2_frame_text_by_tag(id3v2_tag_t *t, const char tag[4]);
 
 uint32_t id3v2_tag_total_frame_size(id3v2_tag_t *t);
 
-// helper methods
+void id3v2_tag_remove_frame_by_tag(id3v2_tag_t *t, const char tag[4]);
+
+void id3v2_tag_free(id3v2_tag_t *t);
+
+// helper methods - read
 id3v2_frame_text_t *id3v2_tag_title(id3v2_tag_t *t); // TIT2
 id3v2_frame_text_t *id3v2_tag_album(id3v2_tag_t *t); // TALB
 id3v2_frame_text_t *id3v2_tag_track(id3v2_tag_t *t); // TRCK
 id3v2_frame_text_t *id3v2_tag_disc(id3v2_tag_t *t); // TPOS
 id3v2_frame_text_t *id3v2_tag_artist(id3v2_tag_t *t); // TPE1
+
+// helper methods - write / update
+void id3v2_tag_write_title(id3v2_tag_t *t, const char *text); // TIT2
+void id3v2_tag_write_artist(id3v2_tag_t *t, const char *text); // TPE1
+
 
 #endif

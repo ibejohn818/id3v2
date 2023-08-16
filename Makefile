@@ -7,7 +7,8 @@ clean:
 	rm -rf ./dist
 
 config:
-	cmake . -B cmake-$(BUILD_TYPE_LOWER)-build -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -G "Unix Makefiles"
+	cmake . -B cmake-$(BUILD_TYPE_LOWER)-build -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -G "Unix Makefiles" \
+		-DBUILD_SHARED_LIBS=off
 
 build:
 	$(MAKE) -C cmake-$(BUILD_TYPE_LOWER)-build

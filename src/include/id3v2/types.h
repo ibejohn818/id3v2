@@ -90,10 +90,10 @@ typedef struct {
  */
 typedef struct {
   char tag[4];
-  char flags[2];
-  char size_bytes[4]; 
+  unsigned char flags[2];
   uint32_t size;
   char *buffer;
+  // TODO: add unique id to handle edit/delete of dupes
 } id3v2_frame_t;
 
 typedef struct {

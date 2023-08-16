@@ -160,25 +160,34 @@ int main(int argc, char **argv) {
     l = l->next;
   }
 
-  iconv_t conv = iconv_open("LATIN1", "UTF-16");
-
   id3v2_frame_text_t *tt;
 
   tt = id3v2_tag_artist(tag);
   if (tt != NULL) {
     printf("Artist: %s \n", tt->text);
+    free(tt);
   }
 
   tt = id3v2_tag_album(tag);
   if (tt != NULL) {
     printf("Album: %s \n", tt->text);
+    free(tt);
   }
 
   tt = id3v2_tag_track(tag);
   if (tt != NULL) {
     printf("Track: %s \n", tt->text);
+    free(tt);
   }
 
+  // update title
+  id3v2_tag_write_title(tag, "an updated title");
+  tt = id3v2_tag_title(tag);
+  if (tt != NULL) {
+    printf("Title: %s \n", tt->text);
+    free(tt);
+  }
+  /*
   tt = id3v2_tag_title(tag);
   if (tt != NULL) {
     // printf("Title: %s \n", tt->text);
@@ -188,49 +197,10 @@ int main(int argc, char **argv) {
     utf16_to_ascii((unsigned char *)tt->frame->buffer + 1, tt->frame->size,
                    &out_buf, &out_size);
     printf("Size: %lu, Title: %s \n", out_size, out_buf);
-    /*
-    size_t conv_size = 25;
-    char *conv_buff = (char *)calloc(conv_size, sizeof(char));
-    char *copy_from = (char *)calloc(tt->frame->size, sizeof(char));
-    memcpy(copy_from, tt->text + 1, tt->frame->size);
 
-    // iconv(conv, &copy_from, (size_t *)&tt->frame->size,
-    //       &conv_buff, &conv_size);
-
-    printf("Frame Size: %lu | Conv: %s \n", (size_t)tt->frame->size, conv_buff);
-    for (uint32_t i = 0; i < tt->frame->size; i++) {
-      printf("C: %c \n", tt->frame->buffer[i]);
-    }
-    char *ubuff = (char *)calloc(65, sizeof(char));
-    size_t ubuff_size = 65;
-    iconv(conv, &tt->text, (size_t *)&tt->frame->size - 4, &ubuff, &ubuff_size);
-    printf("utf8: %s \n", conv_buff);
-    */
   }
-
-  /*
-  id3v2_frame_t *pr = id3v2_tag_raw_frame_by_tag(tag, "APIC");
-  id3v2_frame_picture_t *pic = NULL;
-  if (pr != NULL) {
-    pic = id3v2_frame_picture(pr);
-  }
-
-  if (pic != NULL) {
-    write_image(pic);
-  }
-
-  tt = id3v2_tag_title(tag);
-  for (size_t i = 0; i < tt->frame->size; i++) {
-    printf("B: %x | ", tt->frame->buffer[i]);
-  }
-  printf("\n");
   */
 
-  // for(size_t i=0; i < pic->frame->size; i++) {
-  // for(size_t i=0; i < 30; i++) {
-  //   printf("B: %x | ", pic->buffer[i]);
-  // }
-  // printf("\n");
 
   printf("File name: %s \n", tag->file_name);
 
@@ -246,7 +216,10 @@ int main(int argc, char **argv) {
     // for (uint32_t i = 0; i < save_size; i++) {
     //   printf("C: %c \n", save_buffer[i]);
     // }
+    free(save_buffer);
   }
+
+  id3v2_tag_free(tag);
 
   puts("here");
 
