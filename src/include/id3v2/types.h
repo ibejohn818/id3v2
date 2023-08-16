@@ -61,6 +61,7 @@ typedef struct {
   id3v2_flags_t flags;
   uint32_t tag_size;
   char flag_byte;
+  char version_bytes[2];
 
   // scanned file info
   char file_name[128];
@@ -90,6 +91,7 @@ typedef struct {
 typedef struct {
   char tag[4];
   char flags[2];
+  char size_bytes[4]; 
   uint32_t size;
   char *buffer;
 } id3v2_frame_t;

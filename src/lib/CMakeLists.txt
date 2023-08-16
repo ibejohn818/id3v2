@@ -4,6 +4,8 @@ project("id3v2" C)
 
 # add_compile_options(-W -Wall -Werror -O3)
 
+
+
 set(SOURCES
 #  ${id3v2lib_SOURCE_DIR}/src/include/id3v2/types.h
   synch.c
@@ -25,7 +27,7 @@ include_directories(
 
 add_library(${PROJECT_NAME} ${SOURCES})
 
-# target_link_libraries(${PROJECT_NAME} m)
+# target_link_libraries(${PROJECT_NAME} libicu) 
 
 set(CMAKE_INSTALL_MODE "REL_SYMLINK")
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)

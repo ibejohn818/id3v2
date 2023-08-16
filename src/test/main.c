@@ -1,8 +1,8 @@
+#include <iconv.h>
 #include <stdio.h>
 #include <string.h>
-#include <wchar.h>
 #include <uchar.h>
-#include <iconv.h>
+#include <wchar.h>
 
 #include "../include/id3v2.h"
 
@@ -58,25 +58,100 @@ void print_bytes(char *buf, size_t start, size_t len) {
 
 void write_image(id3v2_frame_picture_t *f) {
 
-  FILE *fd = fopen("/tmp/test.jpg", "w");
+  FILE *fd = fopen("/tmp/test.jpg", "wb");
   if (fd <= 0) {
     puts("error creating file");
     return;
   }
 
-  size_t bytes_written = fwrite(f->buffer, 1, f->size, fd);
-  printf("Bytes written: %lu \n", bytes_written); 
+  size_t bytes_written = fwrite(f->buffer, f->size, 1, fd);
+  printf("Bytes written: %lu \n", bytes_written);
 
   fclose(fd);
+}
+
+void write_id3_buffer(id3v2_tag_t *t, const char *save_to,
+                      unsigned char *buffer, size_t buffer_size) {
+
+  FILE *fp = fopen(save_to, "w");
+
+  // write tag
+  fwrite(buffer, sizeof(char), buffer_size, fp);
+
+  // write music data
+  fwrite(t->music_data, sizeof(char), t->music_size, fp);
+
+  fclose(fp);
+}
+
+void utf16_to_ascii(const unsigned char *utf16_buf, size_t utf16_size,
+                    unsigned char **buf, size_t *size) {
+
+  // check if there is a BOM, if so we skip
+  bool bom_le = utf16_buf[0] == 0xff && utf16_buf[1] == 0xfe;
+  bool bom_be = utf16_buf[0] == 0xfe && utf16_buf[1] == 0xff;
+
+  size_t upos = 0;
+
+  // if bom is present,
+  // move starting position up 2 bytes
+  if (bom_be || bom_le) {
+    upos += 2;
+  }
+
+  unsigned char *abuf = (unsigned char *)calloc(utf16_size, sizeof(char));
+  // save the abuf pointers starting address to transfer over to *buf
+  unsigned char *abuf_start = abuf;
+
+  // walk the utf16 byte pairs and check if the first
+  // byte is valid ascii and append to the *abuf pointer
+  while (upos < utf16_size) {
+    // check if we're at the last byte
+    if ((upos + 1) == utf16_size) {
+      // add null terminator and break out
+      *abuf = '\0';
+      *size += 1;
+      break;
+    }
+    // byte to check for ascii
+    unsigned char chk = utf16_buf[upos];
+    // next byte should be 0x00
+    if (utf16_buf[upos + 1] != 0x00 || chk & 0x80 || chk > 128) {
+      // invalid utf16 pair, skip
+      // TODO: fill in acsii with a default char?
+      // printf("Skipping utf16 pair @%lu \n", upos);
+      upos += 2;
+      continue;
+    }
+
+    *abuf = chk;
+    // printf("Adding ascii: %c\n", *abuf);
+    abuf++;
+    upos += 2;
+    *size += 1;
+  }
+
+  *buf = abuf_start;
 
 }
 
 int main(int argc, char **argv) {
   // const char file_name[] = "/tmp/song1.mp3";
-  const char *file_name = argv[1];
+  char file_name[64] = {0};
+  char save_to[64] = {0};
+
+  memcpy(file_name, argv[1], strlen(argv[1]));
+
+  if (argc >= 3) {
+    memcpy(save_to, argv[2], strlen(argv[2]));
+  }
+  // file_name = argv[1];
 
   id3v2_tag_t *tag = id3v2_from_file(file_name);
   printf("ID3 Version: %u \n", tag->version);
+
+  uint32_t calc_size = id3v2_tag_total_frame_size(tag);
+  printf("Calc size: %u\n", calc_size);
 
   id3v2_frame_list_t *l = tag->frames;
 
@@ -85,7 +160,7 @@ int main(int argc, char **argv) {
     l = l->next;
   }
 
-  iconv_t conv = iconv_open("UTF-8", "UTF-16LE");
+  iconv_t conv = iconv_open("LATIN1", "UTF-16");
 
   id3v2_frame_text_t *tt;
 
@@ -106,16 +181,34 @@ int main(int argc, char **argv) {
 
   tt = id3v2_tag_title(tag);
   if (tt != NULL) {
-    printf("Title: %s \n", tt->text);
-    // size_t conv_size = 128;
-    // char *conv_buff = (char *)malloc(sizeof(char) * conv_size);
-    // iconv(conv, (char **)&tt->frame->buffer, (size_t *)&tt->frame->size, (char **)&conv_buff, &conv_size);
-    // printf("Frame Size: %lu | Conv: %s \n", (size_t)tt->frame->size, conv_buff);
-    // char *ubuff = (char *)calloc(65, sizeof(char));
-    // size_t ubuff_size = 65;
-    // iconv(conv, &tt->text, (size_t *)&tt->frame->size - 4, &ubuff, &ubuff_size);
+    // printf("Title: %s \n", tt->text);
+
+    unsigned char *out_buf;
+    size_t out_size = 0;
+    utf16_to_ascii((unsigned char *)tt->frame->buffer + 1, tt->frame->size,
+                   &out_buf, &out_size);
+    printf("Size: %lu, Title: %s \n", out_size, out_buf);
+    /*
+    size_t conv_size = 25;
+    char *conv_buff = (char *)calloc(conv_size, sizeof(char));
+    char *copy_from = (char *)calloc(tt->frame->size, sizeof(char));
+    memcpy(copy_from, tt->text + 1, tt->frame->size);
+
+    // iconv(conv, &copy_from, (size_t *)&tt->frame->size,
+    //       &conv_buff, &conv_size);
+
+    printf("Frame Size: %lu | Conv: %s \n", (size_t)tt->frame->size, conv_buff);
+    for (uint32_t i = 0; i < tt->frame->size; i++) {
+      printf("C: %c \n", tt->frame->buffer[i]);
+    }
+    char *ubuff = (char *)calloc(65, sizeof(char));
+    size_t ubuff_size = 65;
+    iconv(conv, &tt->text, (size_t *)&tt->frame->size - 4, &ubuff, &ubuff_size);
+    printf("utf8: %s \n", conv_buff);
+    */
   }
 
+  /*
   id3v2_frame_t *pr = id3v2_tag_raw_frame_by_tag(tag, "APIC");
   id3v2_frame_picture_t *pic = NULL;
   if (pr != NULL) {
@@ -127,10 +220,11 @@ int main(int argc, char **argv) {
   }
 
   tt = id3v2_tag_title(tag);
-  for(size_t i=0; i < tt->frame->size; i++) {
+  for (size_t i = 0; i < tt->frame->size; i++) {
     printf("B: %x | ", tt->frame->buffer[i]);
   }
   printf("\n");
+  */
 
   // for(size_t i=0; i < pic->frame->size; i++) {
   // for(size_t i=0; i < 30; i++) {
@@ -139,17 +233,20 @@ int main(int argc, char **argv) {
   // printf("\n");
 
   printf("File name: %s \n", tag->file_name);
-  size_t total = 0;
 
-  l = tag->frames;
-  while(l != NULL) {
-    total += l->frame->size;
-    l = l->next;
+  if (strlen(save_to) > 0) {
+    // id3v2_tag_write_file(tag, "/tmp/test.mp3");
+    unsigned char *save_buffer;
+    size_t save_size;
+
+    id3v2_tag_write_to_buffer(tag, &save_buffer, &save_size);
+
+    // write buffer to file
+    write_id3_buffer(tag, save_to, save_buffer, save_size);
+    // for (uint32_t i = 0; i < save_size; i++) {
+    //   printf("C: %c \n", save_buffer[i]);
+    // }
   }
-
-  printf("Open-Total: %u | Calc-Total: %lu \n", tag->tag_size, total);
-
-  // id3v2_tag_write_file(tag, "/tmp/test-2.mp3");
 
   puts("here");
 

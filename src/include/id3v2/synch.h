@@ -4,8 +4,8 @@
 
 #include <stdint.h>
 
-uint32_t int_decode(char *bytes, int size, int offset);
-char *int_encode(int integer);
+uint32_t int_decode(unsigned char *bytes, int size, int offset);
+unsigned char *int_encode(uint32_t integer);
 uint32_t synch_encode(int value);
 uint32_t synch_decode(int value);
 

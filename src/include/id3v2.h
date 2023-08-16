@@ -46,11 +46,17 @@ id3v2_frame_text_t *id3v2_frame_comment(id3v2_frame_t *f);
  */
 void id3v2_tag_write_file(id3v2_tag_t *t, const char *save_to);
 
+/**
+* write the id3 tag to incoming buffer and set size to incoming size arguments.
+* NOTE: function will alloc enough memory for the tag, just pass in a the pointer
+*/
+void id3v2_tag_write_to_buffer(id3v2_tag_t *t, unsigned char **buffer, size_t *size);
+
 id3v2_frame_t *id3v2_tag_raw_frame_by_tag(id3v2_tag_t *t, const char tag[4]);
 
 id3v2_frame_text_t *id3v2_frame_text_by_tag(id3v2_tag_t *t, const char tag[4]);
 
-size_t id3v2_tag_total_frame_size(id3v2_tag_t *t);
+uint32_t id3v2_tag_total_frame_size(id3v2_tag_t *t);
 
 // helper methods
 id3v2_frame_text_t *id3v2_tag_title(id3v2_tag_t *t); // TIT2

@@ -1,7 +1,7 @@
 #include "id3v2/synch.h"
 #include <stdlib.h>
 
-uint32_t int_decode(char *bytes, int size, int offset) {
+uint32_t int_decode(unsigned char *bytes, int size, int offset) {
   unsigned int result = 0x00;
   int i = 0;
   for (i = 0; i < size; i++) {
@@ -12,13 +12,13 @@ uint32_t int_decode(char *bytes, int size, int offset) {
   return result;
 }
 
-char *int_encode(int integer) {
+unsigned char *int_encode(uint32_t integer) {
   int i;
   int size = 4;
-  char *result = (char *)malloc(sizeof(char) * size);
+  unsigned char *result = (unsigned char *)malloc(sizeof(char) * size);
 
   // We need to reverse the bytes because Intel uses little endian.
-  char *aux = (char *)&integer;
+  unsigned char *aux = (unsigned char *)&integer;
   for (i = size - 1; i >= 0; i--) {
     result[size - 1 - i] = aux[i];
   }
