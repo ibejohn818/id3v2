@@ -26,7 +26,7 @@ unsigned char *int_encode(uint32_t integer) {
   return result;
 }
 
-uint32_t synch_encode(int value) {
+uint32_t synch_encode(uint32_t value) {
   int out, mask = 0x7F;
 
   while (mask ^ 0x7FFFFFFF) {
@@ -40,7 +40,7 @@ uint32_t synch_encode(int value) {
   return out;
 }
 
-uint32_t synch_decode(int value) {
+uint32_t synch_decode(uint32_t value) {
   unsigned int a, b, c, d, result = 0x0;
   a = value & 0xFF;
   b = (value >> 8) & 0xFF;

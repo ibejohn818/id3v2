@@ -27,15 +27,9 @@ static id3v2_frame_t *create_raw_frame(id3v2_tag_t *t, const char tag[4], const 
   f = (id3v2_frame_t *)malloc(sizeof(*f));
 
   memcpy(f->tag, tag, 4);
+  // TODO: support frame flags
   f->flags[0] = 0;
   f->flags[1] = 0;
-
-
-  // f->size = int_decode((unsigned char *)&size, 4, 0);
-  // if (t->version == 4) {
-  //   // version 4 gets the synch safe size
-  //   f->size = synch_decode(f->size);
-  // }
   f->size = size;
   f->buffer = (char *)buffer;
 
@@ -43,7 +37,7 @@ static id3v2_frame_t *create_raw_frame(id3v2_tag_t *t, const char tag[4], const 
 }
 
 
-void id3v2_tag_write_title(id3v2_tag_t *t, const char *text) {
+void id3v2_tag_write_text_frame(id3v2_tag_t *t, const char tag[4], const char *text) {
 
 
   // add one to the length for the prefixed encoding byte
@@ -58,23 +52,37 @@ void id3v2_tag_write_title(id3v2_tag_t *t, const char *text) {
   memcpy(new_text + 1, text, (len-1));
   new_text[len] = '\0';
 
-  for(uint32_t i =0; i < len; i++)  {
-    printf("%u: %x | ", i, new_text[i]);
-  }
-  printf("\n");
-
   // create the new frame
-  id3v2_frame_t *new = create_raw_frame(t, "TIT2", new_text, len);
+  id3v2_frame_t *new = create_raw_frame(t, tag, new_text, len);
 
   // check for existing frame (if present, remove will free it)
-  id3v2_frame_t *f = id3v2_tag_raw_frame_by_tag(t, "TIT2");
+  id3v2_frame_t *f = id3v2_tag_raw_frame_by_tag(t, tag);
 
   if (f != NULL) {
     // frame exist, remove it
-    id3v2_tag_remove_frame_by_tag(t, "TIT2"); 
+    id3v2_tag_remove_frame_by_tag(t, tag); 
   }
 
   // append to frames
   id3v2_prepend_frame(&t->frames, new);
-  puts("after prepend");
+}
+
+void id3v2_tag_write_title(id3v2_tag_t *t, const char *text) {
+  id3v2_tag_write_text_frame(t, "TIT2", text);
+}
+
+void id3v2_tag_write_artist(id3v2_tag_t *t, const char *text) {
+  id3v2_tag_write_text_frame(t, "TPE1", text);
+}
+
+void id3v2_tag_write_album(id3v2_tag_t *t, const char *text) {
+  id3v2_tag_write_text_frame(t, "TALB", text);
+}
+
+void id3v2_tag_write_track(id3v2_tag_t *t, const char *text) {
+  id3v2_tag_write_text_frame(t, "TRCK", text);
+}
+
+void id3v2_tag_write_disc(id3v2_tag_t *t, const char *text) {
+  id3v2_tag_write_text_frame(t, "TPOS", text);
 }

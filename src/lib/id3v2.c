@@ -10,6 +10,7 @@ id3v2_tag_t *id3v2_from_file(const char *file_name) {
 
   id3v2_tag_t *t;
   t = (id3v2_tag_t *)malloc(sizeof(*t));
+  t->frames = NULL;
 
   memcpy(&t->file_name, file_name, strlen(file_name));
 
@@ -31,19 +32,12 @@ id3v2_tag_t *id3v2_from_file(const char *file_name) {
     exit(1);
   }
 
-  // get major version byte
-  t->version = header[3];
-  // TODO: tmp debug
-  // copy the version bits
-  memcpy(&t->version_bytes, &header[3], 2);
-  printf("Version Bytes: %x %x \n", t->version_bytes[0], t->version_bytes[1]);
+  // get major version_major byte
+  t->version_major = header[3];
+  t->version_minor = header[4];
 
   // set flags
-  t->flag_byte = header[5];
-  t->flags.unsynch_fields = header[5] & 0b10000000;
-  t->flags.extended_header = header[5] & 0b01000000;
-  t->flags.expreimental = header[5] & 0b00100000;
-  t->flags.footer = header[5] & 0b00010000;
+  t->flag = header[5];
 
   // decode the tag size
   t->tag_size = synch_decode(int_decode(header, 4, 6));
@@ -115,7 +109,7 @@ size_t id3v2_tag_eat_padding(id3v2_tag_t *t, size_t cursor_pos) {
   return c;
 }
 
-id3v2_frame_t *id3v2_tag_parse_frame(id3v2_tag_t *t, size_t *cursor_pos) {
+id3v2_frame_t *parse_frame(id3v2_tag_t *t, size_t *cursor_pos) {
 
   // validate the frame tag before we allocate the struct
   char tag[4];
@@ -137,9 +131,9 @@ id3v2_frame_t *id3v2_tag_parse_frame(id3v2_tag_t *t, size_t *cursor_pos) {
   // move the cursor forward
   *cursor_pos += 4;
 
-  f->size = int_decode((unsigned char*)t->tag_buffer, 4, *cursor_pos);
-  if (t->version == 4) {
-    // version 4 gets the synch safe size
+  f->size = int_decode((unsigned char *)t->tag_buffer, 4, *cursor_pos);
+  if (t->version_major == 4) {
+    // version_major 4 gets the synch safe size
     f->size = synch_decode(f->size);
   }
 
@@ -167,12 +161,13 @@ static id3v2_frame_list_t *scan_frames(id3v2_tag_t *t) {
   size_t cursor = 0;
 
   do {
-    // TODO: eat possible padding between frames
-    f = id3v2_tag_parse_frame(t, &cursor);
+    f = parse_frame(t, &cursor);
     if (f != NULL) {
       // check if this is going to be the head node
       if (t->frames == NULL) {
-        t->frames = (id3v2_frame_list_t *)malloc(sizeof(id3v2_frame_list_t *));
+        id3v2_frame_list_t *l;
+        l = (id3v2_frame_list_t *)malloc(sizeof(*l));
+        t->frames = l;
         t->frames->frame = f;
         t->frames->next = NULL;
       } else {
@@ -200,6 +195,9 @@ void id3v2_prepend_frame(id3v2_frame_list_t **head, id3v2_frame_t *f) {
 }
 
 id3v2_frame_text_t *id3v2_frame_text(id3v2_frame_t *f) {
+
+  // TODO: add options to automatically convert encoding
+
   if (f->tag[0] != 'T') {
     return NULL;
   }
@@ -207,7 +205,7 @@ id3v2_frame_text_t *id3v2_frame_text(id3v2_frame_t *f) {
   // alloc the text frame
   id3v2_frame_text_t *t;
   t = (id3v2_frame_text_t *)malloc(sizeof(*t));
-  t->frame = (id3v2_frame_t *)malloc(sizeof(*f));
+  // t->frame = (id3v2_frame_t *)malloc(sizeof(*f));
   t->frame = f;
 
   // buffer position
@@ -220,32 +218,32 @@ id3v2_frame_text_t *id3v2_frame_text(id3v2_frame_t *f) {
   switch (f->buffer[cursor]) {
   case 0x00:
     t->encoding = LATIN1;
-    puts("Latin1");
     break;
   case 0x01:
     t->encoding = UTF16;
-    puts("utf16");
     null_term_size = 2;
     break;
   case 0x02:
     t->encoding = UTF16BE;
-    puts("utf16be");
     null_term_size = 2;
     break;
   case 0x03:
     t->encoding = UTF8;
-    puts("utf8");
     null_term_size = 2;
     break;
   default:
-    printf("Illegal encoding for frame: %s \n", f->tag);
-    puts("Defaulting to LATIN1");
+    // printf("Illegal encoding for frame: %s \n", f->tag);
     t->encoding = LATIN1;
   }
   cursor++;
 
-  t->text = (char *)calloc(f->size, sizeof(char));
-  memcpy(t->text, f->buffer + cursor, f->size);
+  if (f->size > 2) {
+    printf("text frame size: %u \n", f->size);
+    t->text = (char *)calloc(f->size, sizeof(char));
+    memcpy(t->text, f->buffer + cursor, f->size);
+  } else {
+    t->text = NULL;
+  }
 
   return t;
 }
@@ -398,12 +396,13 @@ static void write_header(id3v2_tag_t *t, unsigned char *buffer) {
   memcpy(buffer, "ID3", 3);
   p += 3;
 
-  // version bytes
-  memcpy(buffer + p, t->version_bytes, 2);
+  // version_major bytes
+  memcpy(buffer + p, &t->version_major, 1);
+  memcpy(buffer + p, &t->version_minor, 1);
   p += 2;
 
   // flag byte
-  memcpy(buffer + p, &t->flag_byte, 1);
+  memcpy(buffer + p, &t->flag, 1);
   p += 1;
 
   // write synch safe int
@@ -411,8 +410,8 @@ static void write_header(id3v2_tag_t *t, unsigned char *buffer) {
   memcpy(buffer + p, int_encode(synch_encode(total)), 4);
 }
 
-static void write_frame_header(id3v2_tag_t *t, id3v2_frame_t *f, unsigned char *buffer,
-                               size_t *pos) {
+static void write_frame_header(id3v2_tag_t *t, id3v2_frame_t *f,
+                               unsigned char *buffer, size_t *pos) {
 
   // write tag
   memcpy(buffer + *pos, f->tag, 4);
@@ -421,8 +420,8 @@ static void write_frame_header(id3v2_tag_t *t, id3v2_frame_t *f, unsigned char *
   // write the size;
   unsigned char *size;
 
-  // synch int if version 4
-  if (t->version == 4) {
+  // synch int if version_major 4
+  if (t->version_major == 4) {
     size = int_encode(synch_encode(f->size));
   } else {
     size = int_encode(f->size);
@@ -439,7 +438,8 @@ static void write_frame_header(id3v2_tag_t *t, id3v2_frame_t *f, unsigned char *
   *pos += 2;
 }
 
-void id3v2_tag_write_to_buffer(id3v2_tag_t *t, unsigned char **buffer, size_t *size) {
+void id3v2_tag_write_to_buffer(id3v2_tag_t *t, unsigned char **buffer,
+                               size_t *size) {
 
   size_t total = 10;
   total += id3v2_tag_total_frame_size(t);
@@ -486,13 +486,13 @@ void id3v2_tag_remove_frame_by_tag(id3v2_tag_t *t, const char tag[4]) {
   id3v2_frame_list_t *l = t->frames;
   id3v2_frame_list_t *prev = NULL;
 
-  while(l != NULL) {
+  while (l != NULL) {
 
-    if(strcmp(l->frame->tag, tag) == 0) {
+    if (strcmp(l->frame->tag, tag) == 0) {
 
       if (prev == NULL) {
         // if prev is empty, this is the head node
-        // next becomes the new head  
+        // next becomes the new head
         t->frames = l->next;
       } else {
         // link this nodes next as the prev's next
@@ -509,18 +509,50 @@ void id3v2_tag_remove_frame_by_tag(id3v2_tag_t *t, const char tag[4]) {
 
     prev = l;
     l = l->next;
+  }
+}
 
+void id3v2_tag_remove_frame(id3v2_tag_t *t, id3v2_frame_t *f) {
+
+  if (t->frames == NULL) {
+    return;
   }
 
+  id3v2_frame_list_t *l = t->frames;
+  id3v2_frame_list_t *prev = NULL;
+
+  while (l != NULL) {
+
+    if (l->frame == f) {
+
+      if (prev == NULL) {
+        // if prev is empty, this is the head node
+        // next becomes the new head
+        t->frames = l->next;
+      } else {
+        // link this nodes next as the prev's next
+        prev->next = l->next;
+      }
+
+      // free frame
+      free(l->frame->buffer);
+      free(l->frame);
+      free(l);
+      // exit loop
+      break;
+    }
+
+    prev = l;
+    l = l->next;
+  }
 }
 
 void id3v2_tag_free(id3v2_tag_t *t) {
 
- 
   // free framesj
   id3v2_frame_list_t *l = t->frames;
   id3v2_frame_list_t *tmp;
-  while(l != NULL) {
+  while (l != NULL) {
 
     tmp = l->next;
     free(l->frame->buffer);
@@ -530,7 +562,12 @@ void id3v2_tag_free(id3v2_tag_t *t) {
   }
 
   // free music data
+  free(t->tag_buffer);
   free(t->music_data);
   free(t);
+}
 
+void id3v2_tag_free_text_frame(id3v2_frame_text_t *f) {
+  free(f->text);
+  free(f);
 }

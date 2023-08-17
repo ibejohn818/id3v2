@@ -57,3 +57,4 @@ cmake-*-*
 dist/
 spec/
 compile_commands.json
+examples/bin

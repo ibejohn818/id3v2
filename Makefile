@@ -7,8 +7,7 @@ clean:
 	rm -rf ./dist
 
 config:
-	cmake . -B cmake-$(BUILD_TYPE_LOWER)-build -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -G "Unix Makefiles" \
-		-DBUILD_SHARED_LIBS=off
+	cmake . -B cmake-$(BUILD_TYPE_LOWER)-build -DCMAKE_BUILD_TYPE=$(BUILD_TYPE) -G "Unix Makefiles"
 
 build:
 	$(MAKE) -C cmake-$(BUILD_TYPE_LOWER)-build
@@ -21,3 +20,8 @@ package-rocky9:
 		-t id3v2lib:rpm \
 		--output type=local,dest=./ \
 		-f docker/rpm.Dockerfile .
+
+alpine-build:
+	docker buildx build \
+		-t id3v2lib:alpine \
+		-f docker/alpine.Dockerfile .

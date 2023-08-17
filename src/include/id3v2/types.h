@@ -11,73 +11,60 @@
 typedef struct id3v2_frame_list_s id3v2_frame_list_t;
 
 typedef enum {
-  LATIN1,
-  UTF16,
-  UTF16BE,
-  UTF8,
+    LATIN1,
+    UTF16,
+    UTF16BE,
+    UTF8,
 } id3v2_frame_encoding_t;
 
 typedef enum {
-  OTHER = 0x00,
-  PIXEL32,
-  OTHER_ICON,
-  FRONT_COVER,
-  BACK_COVER,
-  LEAFLET,
-  MEDIA,
-  LEAD_ARTIST,
-  CONDUCTOR,
-  BAND,
-  COMPOSER,
-  LYRICIST,
-  RECORDING_LOC,
-  DURING_RECORDING,
-  DURING_PERFORMANCE,
-  VIDEO_CAPTURE,
-  COLORED_FISH,
-  ILLUSTRATION,
-  BAND_LOGO,
-  PUBLISHER_LOGO,
+    OTHER = 0x00,
+    PIXEL32,
+    OTHER_ICON,
+    FRONT_COVER,
+    BACK_COVER,
+    LEAFLET,
+    MEDIA,
+    LEAD_ARTIST,
+    CONDUCTOR,
+    BAND,
+    COMPOSER,
+    LYRICIST,
+    RECORDING_LOC,
+    DURING_RECORDING,
+    DURING_PERFORMANCE,
+    VIDEO_CAPTURE,
+    COLORED_FISH,
+    ILLUSTRATION,
+    BAND_LOGO,
+    PUBLISHER_LOGO,
 } id3v2_picture_type_t;
 
 /**
- * id3 tag flags
- */
-typedef struct {
-  bool unsynch_fields;
-  bool extended_header;
-  bool expreimental;
-  bool footer;
-} id3v2_flags_t;
-
-
-/**
  * id3 tag.
- * tag_buffer holds bytes specified by tag_size
  */
 typedef struct {
-  uint8_t version;
-  // TODO: finalize on a single flag solution
-  id3v2_flags_t flags;
-  uint32_t tag_size;
-  char flag_byte;
-  char version_bytes[2];
+    uint8_t version_major;
+    uint8_t version_minor;
+    unsigned char flag;
 
-  // scanned file info
-  char file_name[128];
-  size_t file_size;
+    uint32_t tag_size;
 
-  // the entire tag buffer specified by 
-  // tag_size minus the header
-  char *tag_buffer;
+    // scanned file info
+    char file_name[128];
+    size_t file_size;
 
-  // linked list of raw frames
-  id3v2_frame_list_t *frames;
+    // the entire tag buffer specified by
+    // tag_size minus the header
+    char *tag_buffer;
 
-  // mp3 data size
-  size_t music_size;
-  // mp3 file data
-  char *music_data;
+    // linked list of raw frames
+    id3v2_frame_list_t *frames;
+
+    // mp3 data size
+    size_t music_size;
+    // mp3 file data
+    char *music_data;
 
 } id3v2_tag_t;
 
@@ -89,37 +76,36 @@ typedef struct {
  * - id3v2_frame_picture
  */
 typedef struct {
-  char tag[4];
-  unsigned char flags[2];
-  uint32_t size;
-  char *buffer;
-  // TODO: add unique id to handle edit/delete of dupes
+    char tag[4];
+    unsigned char flags[2];
+    uint32_t size;
+    char *buffer;
 } id3v2_frame_t;
 
 typedef struct {
-  id3v2_frame_t *frame;
-  id3v2_frame_encoding_t encoding;
-  char *text;
+    id3v2_frame_t *frame;
+    id3v2_frame_encoding_t encoding;
+    char *text;
 } id3v2_frame_text_t;
 
 typedef struct {
-  id3v2_frame_t *frame;
-  id3v2_frame_encoding_t encoding;
-  char *comment;
+    id3v2_frame_t *frame;
+    id3v2_frame_encoding_t encoding;
+    char *comment;
 } id3v2_frame_comment_t;
 
 typedef struct {
-  id3v2_frame_t *frame;
-  id3v2_frame_encoding_t encoding;
-  char mime[32];
-  id3v2_picture_type_t type;
-  size_t size;
-  unsigned char *buffer;
+    id3v2_frame_t *frame;
+    id3v2_frame_encoding_t encoding;
+    char mime[32];
+    id3v2_picture_type_t type;
+    size_t size;
+    unsigned char *buffer;
 } id3v2_frame_picture_t;
 
 typedef struct id3v2_frame_list_s {
-  id3v2_frame_t *frame;
-  struct id3v2_frame_list_s *next;
+    id3v2_frame_t *frame;
+    struct id3v2_frame_list_s *next;
 } id3v2_frame_list_t;
 
 

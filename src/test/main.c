@@ -1,7 +1,6 @@
 #include <iconv.h>
 #include <stdio.h>
 #include <string.h>
-#include <uchar.h>
 #include <wchar.h>
 
 #include "../include/id3v2.h"
@@ -132,7 +131,6 @@ void utf16_to_ascii(const unsigned char *utf16_buf, size_t utf16_size,
   }
 
   *buf = abuf_start;
-
 }
 
 int main(int argc, char **argv) {
@@ -148,7 +146,7 @@ int main(int argc, char **argv) {
   // file_name = argv[1];
 
   id3v2_tag_t *tag = id3v2_from_file(file_name);
-  printf("ID3 Version: %u \n", tag->version);
+  printf("ID3 Version: %u \n", tag->version_major);
 
   uint32_t calc_size = id3v2_tag_total_frame_size(tag);
   printf("Calc size: %u\n", calc_size);
@@ -162,6 +160,7 @@ int main(int argc, char **argv) {
 
   id3v2_frame_text_t *tt;
 
+  id3v2_tag_write_artist(tag, "Super Sublime");
   tt = id3v2_tag_artist(tag);
   if (tt != NULL) {
     printf("Artist: %s \n", tt->text);
@@ -200,7 +199,6 @@ int main(int argc, char **argv) {
 
   }
   */
-
 
   printf("File name: %s \n", tag->file_name);
 
