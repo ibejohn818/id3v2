@@ -34,21 +34,43 @@ install(TARGETS ${PROJECT_NAME} DESTINATION lib)
 install(FILES ${id3v2lib_SOURCE_DIR}/src/include/id3v2.h DESTINATION include)
 install(DIRECTORY ${id3v2lib_SOURCE_DIR}/src/include/id3v2 DESTINATION include)
 
+execute_process(COMMAND which apt
+                RESULT_VARIABLE HAS_APT)
+
+execute_process(COMMAND which rpm
+                RESULT_VARIABLE HAS_RPM)
+
+
 message("-- CMAKE_SYSTEM_INFO_FILE: ${CMAKE_SYSTEM_INFO_FILE}")
 message("-- CMAKE_SYSTEM_NAME:      ${CMAKE_SYSTEM_NAME}")
 message("-- CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")
 message("-- CMAKE_SYSTEM:           ${CMAKE_SYSTEM}")
 message("-- CMAKE_OS_NAME:          ${CMAKE_OS_NAME}")
+message("-- HAS_APT:                ${HAS_APT}")
+message("-- HAS_RPM:                ${HAS_RPM}")
+
+set(PKG_GENERATORS 
+  "TGZ"
+  "STGZ"
+)
+
+if(${HAS_APT} EQUAL 0)
+  list(APPEND PKG_GENERATORS "DEB")
+endif()
+
+if(${HAS_RPM} EQUAL 0)
+  list(APPEND PKG_GENERATORS "RPM")
+endif()
 
 # create install packages
-set(ID3V2_GENERATORS "RPM" "TGZ" "STGZ")
+# set(ID3V2_GENERATORS "RPM" "TGZ" "STGZ")
 set(CPACK_PACKAGE_VERSION ${VERSION})
-# set(CPACK_GENERATOR "RPM" "TGZ" "STGZ")
-set(CPACK_GENERATOR ${ID3V2_GENERATORS})
+set(CPACK_GENERATOR ${PKG_GENERATORS})
 set(CPACK_PACKAGE_NAME ${PROJECT_NAME})
 set(CPACK_PACKAGE_RELEASE 1)
 set(CPACK_PACKAGE_CONTACT "John Hardy")
 set(CPACK_PACKAGE_VENDOR "johnchardy.com")
 set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_PACKAGE_RELEASE}.${CMAKE_SYSTEM_PROCESSOR}")
+set(CPACK_PACKAGE_DIRECTORY "${id3v2lib_SOURCE_DIR}/dist/")
 include(CPack)

@@ -13,6 +13,8 @@ add_subdirectory("src/lib")
 add_subdirectory("src/test")
 add_subdirectory("examples")
 
+
+
 if( EXISTS "${PROJECT_BINARY_DIR}/compile_commands.json" )
   execute_process( COMMAND ${CMAKE_COMMAND} -E copy_if_different
       ${PROJECT_BINARY_DIR}/compile_commands.json

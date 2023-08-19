@@ -15,36 +15,41 @@ int main(int argc, char **argv) {
   char *scan_path = argv[1];
 
   printf("Path: %s \n", scan_path);
-  DIR *dp;
-  if ((dp = opendir(scan_path)) == NULL) {
-    puts("error opening directory");
-    return -1;
-  }
 
-  struct dirent *dent;
+  DIR *dp;
+  struct dirent *ep;
   struct stat statbuf;
 
-  chdir(scan_path);
-  while ((dent = readdir(dp)) != NULL) {
-    lstat(dent->d_name, &statbuf);
-    if (S_ISDIR(statbuf.st_mode)) {
-    } else {
-      // printf("%s\n", dent->d_name);
-      char mp3[255];
-      sprintf(mp3, "%s/%s", scan_path, dent->d_name);
-      printf("%s \n", mp3);
-      // id3v2_tag_t *tag = id3v2_from_file(mp3);
-      // if (tag == NULL) {
-      //   puts("unable to parse file");
-      //   return -2;
-      // }
-      // id3v2_frame_text_t *title = id3v2_tag_title(tag);
-      // printf("Title: %s \n",
-      //        (title != NULL && title->text != NULL) ? title->text : "N/A");
-      // id3v2_tag_free_text_frame(title);
-      // id3v2_tag_free(tag);
+  dp = opendir (scan_path);
+  if (dp != NULL)
+    {
+      while ((ep = readdir (dp))) {
+        char file_path[255] = {0};
+        sprintf(file_path, "%s/%s", scan_path, ep->d_name);
+        if(lstat(file_path, &statbuf) == -1) {
+          printf("lstat error \n");
+          continue;
+        }
+
+           printf("File type:                ");
+
+           switch (statbuf.st_mode & S_IFMT) {
+           case S_IFBLK:  printf("block device ");            break;
+           case S_IFCHR:  printf("character device ");        break;
+           case S_IFIFO:  printf("FIFO/pipe ");               break;
+           case S_IFLNK:  printf("symlink ");                 break;
+           case S_IFREG:  printf("regular file ");            break;
+           case S_IFDIR:  printf("directory ");               break;
+           case S_IFSOCK: printf("socket ");                  break;
+           default:       printf("unknown? ");                break;
+           }
+        puts (ep->d_name);
+      }
+      (void) closedir (dp);
     }
-  }
+  else
+    perror ("Couldn't open the directory");
+
 
   // id3v2_tag_t *tag = id3v2_from_file(file_name);
   // if (tag == NULL) {
