@@ -9,3 +9,13 @@ target_link_libraries(edit-tag id3v2)
 
 add_executable(scan-dir scan_dir.c)
 target_link_libraries(scan-dir id3v2)
+
+include(FindPkgConfig)
+pkg_search_module(LIBSODIUM REQUIRED libsodium)
+
+include_directories(
+  ${LIBSODIUM_INCLUDE_DIRS}
+)
+
+add_executable(hash hash.c)
+target_link_libraries(hash id3v2 ${LIBSODIUM_LIBRARIES})

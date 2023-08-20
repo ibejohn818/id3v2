@@ -8,8 +8,7 @@ id3v2_tag_t *id3v2_from_file(const char *file_name) {
 
   FILE *fp = fopen(file_name, "rb");
 
-  id3v2_tag_t *t;
-  t = (id3v2_tag_t *)malloc(sizeof(*t));
+  id3v2_tag_t *t = malloc(sizeof(*t));
   t->frames = NULL;
 
   memcpy(&t->file_name, file_name, strlen(file_name));
@@ -47,12 +46,12 @@ id3v2_tag_t *id3v2_from_file(const char *file_name) {
   fseek(fp, 10, SEEK_SET);
 
   // read tag buffer
-  t->tag_buffer = (char *)calloc(t->tag_size, sizeof(char));
+  t->tag_buffer = calloc(t->tag_size, sizeof(char));
   fread(t->tag_buffer, sizeof(char), t->tag_size, fp);
 
   // allocate music_data
   t->music_size = t->file_size - ftell(fp);
-  t->music_data = (char *)malloc(sizeof(char) * t->music_size);
+  t->music_data = malloc(sizeof(char) * t->music_size);
 
   // read data
   fread(t->music_data, sizeof(char), t->music_size, fp);
@@ -67,7 +66,7 @@ id3v2_tag_t *id3v2_from_file(const char *file_name) {
 
 id3v2_tag_t *id3v2_from_buffer(const char *buf) {
   id3v2_tag_t *t;
-  t = (id3v2_tag_t *)malloc(sizeof(*t));
+  t = malloc(sizeof(*t));
 
   return t;
 }
@@ -122,8 +121,7 @@ id3v2_frame_t *parse_frame(id3v2_tag_t *t, size_t *cursor_pos) {
   }
 
   // tag is valid, allocate the struct
-  id3v2_frame_t *f;
-  f = (id3v2_frame_t *)calloc(1, sizeof(*f));
+  id3v2_frame_t *f = malloc(sizeof(*f));
 
   // copy tag to struct
   memcpy(&f->tag, tag, 4);
@@ -146,7 +144,7 @@ id3v2_frame_t *parse_frame(id3v2_tag_t *t, size_t *cursor_pos) {
   *cursor_pos += 2;
 
   // allocate and copy the frame buffer
-  f->buffer = (char *)calloc(f->size, sizeof(char));
+  f->buffer = calloc(f->size, sizeof(char));
   memcpy(f->buffer, t->tag_buffer + *cursor_pos, f->size);
 
   *cursor_pos += f->size;
@@ -165,8 +163,7 @@ static id3v2_frame_list_t *scan_frames(id3v2_tag_t *t) {
     if (f != NULL) {
       // check if this is going to be the head node
       if (t->frames == NULL) {
-        id3v2_frame_list_t *l;
-        l = (id3v2_frame_list_t *)malloc(sizeof(*l));
+        id3v2_frame_list_t *l = malloc(sizeof(*l));
         t->frames = l;
         t->frames->frame = f;
         t->frames->next = NULL;
@@ -182,8 +179,7 @@ static id3v2_frame_list_t *scan_frames(id3v2_tag_t *t) {
 
 void id3v2_prepend_frame(id3v2_frame_list_t **head, id3v2_frame_t *f) {
 
-  id3v2_frame_list_t *l;
-  l = (id3v2_frame_list_t *)malloc(sizeof(*l));
+  id3v2_frame_list_t *l = malloc(sizeof(*l));
 
   // add incoming frame to new list node
   l->frame = f;
@@ -203,8 +199,7 @@ id3v2_frame_text_t *id3v2_frame_text(id3v2_frame_t *f) {
   }
 
   // alloc the text frame
-  id3v2_frame_text_t *t;
-  t = (id3v2_frame_text_t *)malloc(sizeof(*t));
+  id3v2_frame_text_t *t = malloc(sizeof(*t));
   // t->frame = (id3v2_frame_t *)malloc(sizeof(*f));
   t->frame = f;
 
@@ -239,7 +234,7 @@ id3v2_frame_text_t *id3v2_frame_text(id3v2_frame_t *f) {
 
   if (f->size > 2) {
     printf("text frame size: %u \n", f->size);
-    t->text = (char *)calloc(f->size, sizeof(char));
+    t->text = calloc(f->size, sizeof(char));
     memcpy(t->text, f->buffer + cursor, f->size);
   } else {
     t->text = NULL;
@@ -310,8 +305,7 @@ id3v2_frame_picture_t *id3v2_frame_picture(id3v2_frame_t *f) {
     return NULL;
   }
 
-  id3v2_frame_picture_t *p;
-  p = (id3v2_frame_picture_t *)malloc(sizeof(*p));
+  id3v2_frame_picture_t *p = malloc(sizeof(*p));
   p->frame = f;
 
   size_t cursor = 0;
@@ -372,7 +366,7 @@ id3v2_frame_picture_t *id3v2_frame_picture(id3v2_frame_t *f) {
   printf("frame size: %u \n", f->size);
   printf("image size: %lu \n", p->size);
   // allocate and copy picture data
-  p->buffer = (unsigned char *)calloc(p->size, sizeof(unsigned char));
+  p->buffer = calloc(p->size, sizeof(unsigned char));
   memcpy(p->buffer, f->buffer + cursor, p->size);
 
   return p;
@@ -448,8 +442,7 @@ void id3v2_tag_write_to_buffer(id3v2_tag_t *t, unsigned char **buffer,
   total += 2048;
 
   // allocate buffer
-  unsigned char *b;
-  b = (unsigned char *)calloc(total, sizeof(unsigned char));
+  unsigned char *b = calloc(total, sizeof(unsigned char));
 
   // write header
   write_header(t, b);

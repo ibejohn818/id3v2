@@ -15,7 +15,7 @@ uint32_t int_decode(unsigned char *bytes, int size, int offset) {
 unsigned char *int_encode(uint32_t integer) {
   int i;
   int size = 4;
-  unsigned char *result = (unsigned char *)malloc(sizeof(char) * size);
+  unsigned char *result = malloc(sizeof(*result) * size);
 
   // We need to reverse the bytes because Intel uses little endian.
   unsigned char *aux = (unsigned char *)&integer;

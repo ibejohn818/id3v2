@@ -4,6 +4,9 @@ project("id3v2" C)
 
 # add_compile_options(-W -Wall -Werror -O3)
 
+include(FindPkgConfig)
+pkg_search_module(LIBSODIUM OPTIONAL libsodium)
+
 
 
 set(SOURCES
@@ -23,11 +26,12 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/../../bin)
 include_directories(
 #  ${id3v2lib_SOURCE_DIR}/src/include/id3v2
   ${id3v2lib_SOURCE_DIR}/src/include
+  ${LIBSODIUM_INCLUDE_DIRS}
 )
 
 add_library(${PROJECT_NAME} ${SOURCES})
 
-# target_link_libraries(${PROJECT_NAME} libicu) 
+target_link_libraries(${PROJECT_NAME} ${LIBSODIUM_LIBRARIES}) 
 
 set(CMAKE_INSTALL_MODE "REL_SYMLINK")
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)
@@ -74,3 +78,10 @@ set(CPACK_PACKAGING_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 set(CPACK_PACKAGE_FILE_NAME "${CPACK_PACKAGE_NAME}-${CPACK_PACKAGE_VERSION}-${CPACK_PACKAGE_RELEASE}.${CMAKE_SYSTEM_PROCESSOR}")
 set(CPACK_PACKAGE_DIRECTORY "${id3v2lib_SOURCE_DIR}/dist/")
 include(CPack)
+
+
+get_cmake_property(_variableNames VARIABLES)
+list (SORT _variableNames)
+foreach (_variableName ${_variableNames})
+    message(STATUS "${_variableName}=${${_variableName}}")
+endforeach()

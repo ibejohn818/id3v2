@@ -21,10 +21,10 @@ id3v2_frame_text_t *id3v2_tag_disc(id3v2_tag_t *t) {
   return id3v2_frame_text_by_tag(t, "TPOS");
 }
 
-static id3v2_frame_t *create_raw_frame(id3v2_tag_t *t, const char tag[4], const char *buffer, size_t size) {
+static id3v2_frame_t *create_raw_frame(id3v2_tag_t *t, const char tag[4],
+                                       const char *buffer, size_t size) {
 
-  id3v2_frame_t *f;
-  f = (id3v2_frame_t *)malloc(sizeof(*f));
+  id3v2_frame_t *f = malloc(sizeof(*f));
 
   memcpy(f->tag, tag, 4);
   // TODO: support frame flags
@@ -36,20 +36,19 @@ static id3v2_frame_t *create_raw_frame(id3v2_tag_t *t, const char tag[4], const 
   return f;
 }
 
-
-void id3v2_tag_write_text_frame(id3v2_tag_t *t, const char tag[4], const char *text) {
-
+void id3v2_tag_write_text_frame(id3v2_tag_t *t, const char tag[4],
+                                const char *text) {
 
   // add one to the length for the prefixed encoding byte
   size_t len = strlen(text) + 2;
 
-  char *new_text = (char *)malloc(sizeof(char) * len);
+  char *new_text = malloc(sizeof(char) * len);
 
   // TODO: add optional encoding (hard coded to latin1)
   *new_text = 0x00;
 
   // copy the given text
-  memcpy(new_text + 1, text, (len-1));
+  memcpy(new_text + 1, text, (len - 1));
   new_text[len] = '\0';
 
   // create the new frame
@@ -60,7 +59,7 @@ void id3v2_tag_write_text_frame(id3v2_tag_t *t, const char tag[4], const char *t
 
   if (f != NULL) {
     // frame exist, remove it
-    id3v2_tag_remove_frame_by_tag(t, tag); 
+    id3v2_tag_remove_frame_by_tag(t, tag);
   }
 
   // append to frames
