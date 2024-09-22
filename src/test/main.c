@@ -164,19 +164,19 @@ int main(int argc, char **argv) {
   tt = id3v2_tag_artist(tag);
   if (tt != NULL) {
     printf("Artist: %s \n", tt->text);
-    free(tt);
+    id3v2_tag_free_text_frame(tt);
   }
 
   tt = id3v2_tag_album(tag);
   if (tt != NULL) {
     printf("Album: %s \n", tt->text);
-    free(tt);
+    id3v2_tag_free_text_frame(tt);
   }
 
   tt = id3v2_tag_track(tag);
   if (tt != NULL) {
     printf("Track: %s \n", tt->text);
-    free(tt);
+    id3v2_tag_free_text_frame(tt);
   }
 
   // update title
@@ -184,7 +184,7 @@ int main(int argc, char **argv) {
   tt = id3v2_tag_title(tag);
   if (tt != NULL) {
     printf("Title: %s \n", tt->text);
-    free(tt);
+    id3v2_tag_free_text_frame(tt);
   }
   /*
   tt = id3v2_tag_title(tag);

@@ -33,6 +33,9 @@ add_library(${PROJECT_NAME} ${SOURCES})
 
 target_link_libraries(${PROJECT_NAME} ${LIBSODIUM_LIBRARIES}) 
 
+configure_file(id3v2.pc.in ${CMAKE_BINARY_DIR}/id3v2.pc
+)
+
 set(CMAKE_INSTALL_MODE "REL_SYMLINK")
 install(TARGETS ${PROJECT_NAME} DESTINATION lib)
 install(FILES ${id3v2lib_SOURCE_DIR}/src/include/id3v2.h DESTINATION include)
