@@ -10,9 +10,9 @@ pkg_search_module(LIBSODIUM OPTIONAL libsodium)
 
 
 set(SOURCES
-#  ${id3v2lib_SOURCE_DIR}/src/include/id3v2/types.h
   synch.c
   helpers.c
+  unicode.c
   id3v2.c
   )
 
@@ -53,6 +53,7 @@ message("-- CMAKE_SYSTEM_NAME:      ${CMAKE_SYSTEM_NAME}")
 message("-- CMAKE_SYSTEM_PROCESSOR: ${CMAKE_SYSTEM_PROCESSOR}")
 message("-- CMAKE_SYSTEM:           ${CMAKE_SYSTEM}")
 message("-- CMAKE_OS_NAME:          ${CMAKE_OS_NAME}")
+message("-- CMAKE_INSTALL_PREFIX:   ${CMAKE_INSTALL_PREFIX}")
 message("-- HAS_APT:                ${HAS_APT}")
 message("-- HAS_RPM:                ${HAS_RPM}")
 

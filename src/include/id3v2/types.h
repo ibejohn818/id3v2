@@ -86,6 +86,7 @@ typedef struct {
     id3v2_frame_t *frame;
     id3v2_frame_encoding_t encoding;
     char *text;
+    size_t size;
 } id3v2_frame_text_t;
 
 typedef struct {

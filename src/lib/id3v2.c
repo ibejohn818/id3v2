@@ -1,6 +1,7 @@
 #include "id3v2.h"
 #include "id3v2/synch.h"
 #include "id3v2/types.h"
+#include "id3v2/unicode.h"
 
 static id3v2_frame_list_t *scan_frames(id3v2_tag_t *t);
 
@@ -22,13 +23,15 @@ id3v2_tag_t *id3v2_from_file(const char *file_name) {
 
   if (fread(&header, sizeof(char), ID3_HEADER, fp) != ID3_HEADER) {
     puts("unable to read id3 header");
-    exit(1);
+    // exit(1);
+    goto error;
   }
 
   // check id3 tag marker
   if ((header[0] != 'I') || (header[1] != 'D') || (header[2] != '3')) {
     puts("invalid id3 header");
-    exit(1);
+    // exit(1);
+    goto error;
   }
 
   // get major version_major byte
@@ -41,7 +44,7 @@ id3v2_tag_t *id3v2_from_file(const char *file_name) {
   // decode the tag size
   t->tag_size = synch_decode(int_decode(header, 4, 6));
 
-  printf("Tag size: %u \n", t->tag_size);
+  // fprintf(stderr, "Tag size: %u \n", t->tag_size);
 
   fseek(fp, 10, SEEK_SET);
 
@@ -62,6 +65,13 @@ id3v2_tag_t *id3v2_from_file(const char *file_name) {
   fclose(fp);
 
   return t;
+
+error:
+  if (t != NULL) {
+    id3v2_tag_free(t);
+  }
+  fclose(fp);
+  return NULL;
 }
 
 id3v2_tag_t *id3v2_from_buffer(const char *buf) {
@@ -116,7 +126,7 @@ id3v2_frame_t *parse_frame(id3v2_tag_t *t, size_t *cursor_pos) {
 
   // validate the tag and return NULL for invalid
   if (!_id3v2_validate_frame_tag(tag)) {
-    printf("Invalid frame tag: position: %lu Tag: %s \n", *cursor_pos, tag);
+    // fprintf(stderr, "Invalid frame tag: position: %lu Tag: %s \n", *cursor_pos, tag);
     return NULL;
   }
 
@@ -130,9 +140,11 @@ id3v2_frame_t *parse_frame(id3v2_tag_t *t, size_t *cursor_pos) {
   *cursor_pos += 4;
 
   f->size = int_decode((unsigned char *)t->tag_buffer, 4, *cursor_pos);
+  // fprintf(stderr, "frame size: %d \n", f->size);
   if (t->version_major == 4) {
     // version_major 4 gets the synch safe size
     f->size = synch_decode(f->size);
+    fprintf(stderr, "sync safe frame: %d \n", f->size);
   }
 
   // move the cursor forward
@@ -140,13 +152,22 @@ id3v2_frame_t *parse_frame(id3v2_tag_t *t, size_t *cursor_pos) {
 
   // get the flags
   memcpy(&f->flags, t->tag_buffer + *cursor_pos, 2);
-
   *cursor_pos += 2;
 
-  // allocate and copy the frame buffer
-  f->buffer = calloc(f->size, sizeof(char));
-  memcpy(f->buffer, t->tag_buffer + *cursor_pos, f->size);
+  // if (strcmp(tag, "TIT2") == 0) {
+  //   fprintf(stderr, "Found title \n");
+  //   fprintf(stderr, "flags: %x %x\n", f->flags[0],  f->flags[1]);
+  //   fprintf(stderr, "first bytes: %x %x\n", (t->tag_buffer + *cursor_pos)[0], (t->tag_buffer + *cursor_pos)[1]);
+  //   for(size_t ii=0; ii < f->size; ii++) {
+  //     fprintf(stderr, "0x%.2x\n", (t->tag_buffer + *cursor_pos)[ii]);
+  //   }
+  // }
 
+  // allocate and copy the frame buffer
+  // f->buffer = calloc(f->size + 1, sizeof(char));
+  f->buffer = malloc(sizeof(char) * f->size);
+  memcpy(f->buffer, t->tag_buffer + (*cursor_pos), (size_t)f->size);
+ 
   *cursor_pos += f->size;
   //  printf("func cursor pos: %lu \n", *cursor_pos);
 
@@ -205,39 +226,51 @@ id3v2_frame_text_t *id3v2_frame_text(id3v2_frame_t *f) {
 
   // buffer position
   size_t cursor = 0;
-  // size of the null terminator to apply
-  size_t null_term_size = 1;
+
+  if (f->size <= 2) {
+    t->text = NULL;
+    t->encoding = LATIN1;
+    return t;
+  }
 
   // determine encoding
   // TODO: utf byte order marker?
+  // FIXME: using a hack for utf16, we should make this 
+  // more robust or use a library
   switch (f->buffer[cursor]) {
   case 0x00:
     t->encoding = LATIN1;
     break;
   case 0x01:
     t->encoding = UTF16;
-    null_term_size = 2;
     break;
   case 0x02:
     t->encoding = UTF16BE;
-    null_term_size = 2;
     break;
   case 0x03:
     t->encoding = UTF8;
-    null_term_size = 2;
     break;
   default:
-    // printf("Illegal encoding for frame: %s \n", f->tag);
     t->encoding = LATIN1;
   }
   cursor++;
 
-  if (f->size > 2) {
-    printf("text frame size: %u \n", f->size);
-    t->text = calloc(f->size, sizeof(char));
+  switch(t->encoding) {
+  case UTF16:{
+      char *out = NULL;
+      size_t out_size = 0;
+      utf16_to_ascii(f->buffer, f->size, &out, &out_size); 
+      t->encoding = LATIN1;
+      t->text = out;
+      t->size = out_size;
+      // fprintf(stderr, "Output: %s\n", t->text);
+      break;
+  }
+  default: // LATIN1
+    t->text = malloc(sizeof(char) * f->size);
+    t->size = f->size;
     memcpy(t->text, f->buffer + cursor, f->size);
-  } else {
-    t->text = NULL;
+    break;
   }
 
   return t;
@@ -435,6 +468,7 @@ static void write_frame_header(id3v2_tag_t *t, id3v2_frame_t *f,
 void id3v2_tag_write_to_buffer(id3v2_tag_t *t, unsigned char **buffer,
                                size_t *size) {
 
+  // start with the known header size
   size_t total = 10;
   total += id3v2_tag_total_frame_size(t);
 

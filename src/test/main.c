@@ -83,7 +83,7 @@ void write_id3_buffer(id3v2_tag_t *t, const char *save_to,
   fclose(fp);
 }
 
-void utf16_to_ascii(const unsigned char *utf16_buf, size_t utf16_size,
+void ___utf16_to_ascii(const unsigned char *utf16_buf, size_t utf16_size,
                     unsigned char **buf, size_t *size) {
 
   // check if there is a BOM, if so we skip
@@ -160,12 +160,12 @@ int main(int argc, char **argv) {
 
   id3v2_frame_text_t *tt;
 
-  id3v2_tag_write_artist(tag, "Super Sublime");
-  tt = id3v2_tag_artist(tag);
-  if (tt != NULL) {
-    printf("Artist: %s \n", tt->text);
-    id3v2_tag_free_text_frame(tt);
-  }
+  // id3v2_tag_write_artist(tag, "Super Sublime");
+  // tt = id3v2_tag_artist(tag);
+  // if (tt != NULL) {
+  //   printf("Artist: %s \n", tt->text);
+  //   id3v2_tag_free_text_frame(tt);
+  // }
 
   tt = id3v2_tag_album(tag);
   if (tt != NULL) {
@@ -176,6 +176,12 @@ int main(int argc, char **argv) {
   tt = id3v2_tag_track(tag);
   if (tt != NULL) {
     printf("Track: %s \n", tt->text);
+    id3v2_tag_free_text_frame(tt);
+  }
+
+  tt = id3v2_tag_title(tag);
+  if (tt != NULL) {
+    printf("Title: %s \n", tt->text);
     id3v2_tag_free_text_frame(tt);
   }
 
