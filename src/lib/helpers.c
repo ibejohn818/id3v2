@@ -21,6 +21,10 @@ id3v2_frame_text_t *id3v2_tag_disc(id3v2_tag_t *t) {
   return id3v2_frame_text_by_tag(t, "TPOS");
 }
 
+id3v2_frame_text_t *id3v2_tag_length(id3v2_tag_t *t) {
+  return id3v2_frame_text_by_tag(t, "TLEN");
+}
+
 static id3v2_frame_t *create_raw_frame(id3v2_tag_t *t, const char tag[4],
                                        const char *buffer, size_t size) {
 

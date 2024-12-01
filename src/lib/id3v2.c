@@ -67,8 +67,9 @@ id3v2_tag_t *id3v2_from_file(const char *file_name) {
   return t;
 
 error:
+  fprintf(stderr, "goto: error \n");
   if (t != NULL) {
-    id3v2_tag_free(t);
+    // id3v2_tag_free(t);
   }
   fclose(fp);
   return NULL;
@@ -141,10 +142,12 @@ id3v2_frame_t *parse_frame(id3v2_tag_t *t, size_t *cursor_pos) {
 
   f->size = int_decode((unsigned char *)t->tag_buffer, 4, *cursor_pos);
   // fprintf(stderr, "frame size: %d \n", f->size);
+  // TODO: do we need to handle this?
   if (t->version_major == 4) {
     // version_major 4 gets the synch safe size
-    f->size = synch_decode(f->size);
-    fprintf(stderr, "sync safe frame: %d \n", f->size);
+    // f->size =
+    // size_t synch_size = synch_decode(f->size);
+    // fprintf(stderr, "sync safe frame: %zu \n", synch_size);
   }
 
   // move the cursor forward
@@ -582,15 +585,20 @@ void id3v2_tag_free(id3v2_tag_t *t) {
   while (l != NULL) {
 
     tmp = l->next;
-    free(l->frame->buffer);
-    free(l->frame);
+    if (l->frame != NULL) {
+      if (l->frame->buffer != NULL)
+        free(l->frame->buffer);
+      free(l->frame);
+    }
     free(l);
     l = tmp;
   }
 
   // free music data
-  free(t->tag_buffer);
-  free(t->music_data);
+  if (t->tag_buffer != NULL)
+    free(t->tag_buffer);
+  if (t->music_data != NULL)
+    free(t->music_data);
   free(t);
 }
 

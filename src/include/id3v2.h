@@ -74,6 +74,7 @@ id3v2_frame_text_t *id3v2_tag_album(id3v2_tag_t *t); // TALB
 id3v2_frame_text_t *id3v2_tag_track(id3v2_tag_t *t); // TRCK
 id3v2_frame_text_t *id3v2_tag_disc(id3v2_tag_t *t); // TPOS
 id3v2_frame_text_t *id3v2_tag_artist(id3v2_tag_t *t); // TPE1
+id3v2_frame_text_t *id3v2_tag_length(id3v2_tag_t *t); // TLEN
 
 // helper methods - write / update
 void id3v2_tag_write_text_frame(id3v2_tag_t *t, const char tag[4], const char *text);

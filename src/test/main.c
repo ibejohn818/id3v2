@@ -161,11 +161,11 @@ int main(int argc, char **argv) {
   id3v2_frame_text_t *tt;
 
   // id3v2_tag_write_artist(tag, "Super Sublime");
-  // tt = id3v2_tag_artist(tag);
-  // if (tt != NULL) {
-  //   printf("Artist: %s \n", tt->text);
-  //   id3v2_tag_free_text_frame(tt);
-  // }
+  tt = id3v2_tag_artist(tag);
+  if (tt != NULL) {
+    printf("Artist: %s \n", tt->text);
+    id3v2_tag_free_text_frame(tt);
+  }
 
   tt = id3v2_tag_album(tag);
   if (tt != NULL) {
@@ -185,13 +185,19 @@ int main(int argc, char **argv) {
     id3v2_tag_free_text_frame(tt);
   }
 
-  // update title
-  id3v2_tag_write_title(tag, "an updated title");
-  tt = id3v2_tag_title(tag);
+  tt = id3v2_tag_length(tag);
   if (tt != NULL) {
-    printf("Title: %s \n", tt->text);
+    printf("Length: %s \n", tt->text);
     id3v2_tag_free_text_frame(tt);
   }
+
+  // update title
+  // id3v2_tag_write_title(tag, "an updated title");
+  // tt = id3v2_tag_title(tag);
+  // if (tt != NULL) {
+  //   printf("Title: %s \n", tt->text);
+  //   id3v2_tag_free_text_frame(tt);
+  // }
   /*
   tt = id3v2_tag_title(tag);
   if (tt != NULL) {
@@ -224,8 +230,6 @@ int main(int argc, char **argv) {
   }
 
   id3v2_tag_free(tag);
-
-  puts("here");
 
   return 0;
 }

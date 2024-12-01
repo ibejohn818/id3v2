@@ -20,7 +20,7 @@ build:
 gcc-build-image:
 	docker buildx build -f docker/gcc.ubuntu.Dockerfile -t tools/ubuntu:gcc .
 
-package-rocky9:
+rpm-build:
 	docker buildx build \
 		-t id3v2lib:rpm \
 		--output type=local,dest=./ \
@@ -30,3 +30,8 @@ alpine-build:
 	docker buildx build \
 		-t id3v2lib:alpine \
 		-f docker/alpine.Dockerfile .
+
+debian-build:
+	docker buildx build \
+		-t id2v2lib:debian \
+		-f docker/debian.Dockerfile .
